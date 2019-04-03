@@ -5,8 +5,16 @@ Version: 0.1.0
 Author: Nitin Gupta
 Maintainer: Nitin Gupta <gupta.nitin1@gmail.com>
 Description: Frequently used functions in personal work. Custom ggplot2 themes.
-License: Apache License (>= 2.0)
+License: Proprietary
 Encoding: UTF-8
 LazyData: true
-Imports: 
-    ggplot2
+Depends: 
+    tidyverse,
+    tidyquant,
+    highcharter,
+    ggplot2,
+    grid,
+    scales,
+    cowplot,
+    RODBC
+RoxygenNote: 6.0.1
