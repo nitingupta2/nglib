@@ -206,7 +206,7 @@ getLatestPerformance <- function(dfReturns, lPastYears=list('ALL'), ishtmlOutput
     firstYearMonth <- paste(lubridate::month(firstDate, label=T, abbr=T),lubridate::year(firstDate))
     lastYearMonth <- paste(lubridate::month(lastDate, label=T, abbr=T),lubridate::year(lastDate))
 
-    ctr <- 51
+    ctr <- 1
     dfPerfFinal <- data.frame()
     numberOfMonths = nrow(dfReturns) ; numberOfAssets = ncol(dfReturns)
     for(yrs in lPastYears) {
