@@ -1,4 +1,3 @@
-Quandl::Quandl.api_key(keyring::key_get("Quandl", username = "nitin"))
 EPSILON <- 1e-16
 
 # Download daily returns from Yahoo Finance or Quandl
