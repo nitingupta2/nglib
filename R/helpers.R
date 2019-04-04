@@ -5,7 +5,7 @@ getMonthlyRiskFreeReturns <- function(symbol = "DTB3", firstDownloadDate = "2009
         set_names(c("Date","TBILLS")) %>%
         mutate(Year = lubridate::year(Date)) %>%
         add_count(Year) %>%
-        mutate(TBILLS = if_else(n > 250, TBILLS/n, TBILLS/261)) %>%
+        mutate(TBILLS = if_else(n > 250, TBILLS/(100*n), TBILLS/(100*261))) %>%
         select(Date, TBILLS) %>%
         getMonthlyReturns()
 }
