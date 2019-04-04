@@ -1,5 +1,15 @@
 EPSILON <- 1e-16
 
+getMonthlyRiskFreeReturns <- function(symbol = "DTB3", firstDownloadDate = "2009-01-01") {
+    dfRiskFree <- tq_get(symbol, get = "economic.data", from = firstDownloadDate) %>%
+        set_names(c("Date","TBILLS")) %>%
+        mutate(Year = lubridate::year(Date)) %>%
+        add_count(Year) %>%
+        mutate(TBILLS = if_else(n > 250, TBILLS/n, TBILLS/261)) %>%
+        select(Date, TBILLS) %>%
+        getMonthlyReturns()
+}
+
 # Download daily returns from Yahoo Finance or Quandl
 getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-01-01") {
     print(paste("Downloading data for", symbol))
