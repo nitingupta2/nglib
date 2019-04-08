@@ -16,5 +16,6 @@ Depends:
     scales,
     cowplot,
     gplots,
-    RODBC
+    RODBC,
+    jsonlite
 RoxygenNote: 6.0.1
