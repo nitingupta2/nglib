@@ -65,10 +65,9 @@ getPerformanceMetrics <- function(dfReturns) {
     dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfSkewness, dfMonthwise),
                      inner_join, by = "Symbol") %>%
         mutate(Sharpe = AnnualizedReturnExcess/AnnualizedStdDev,
-               Sortino = AnnualizedReturnExcess/AnnualizedSemidev,
-               Calmar = AnnualizedReturn/abs(WorstDD)) %>%
+               Sortino = AnnualizedReturnExcess/AnnualizedSemidev) %>%
         select(-AnnualizedReturnExcess, -AnnualizedSemidev, -Sortino) %>%
-        select(Symbol, AnnualizedReturn, AnnualizedStdDev, Sharpe, Skewness, Calmar, WorstDD, everything())
+        select(Symbol, AnnualizedReturn, AnnualizedStdDev, Sharpe, Skewness, WorstDD, everything())
 
     vColNames <- colnames(dfPerf) %>%
         str_replace_all("Annualized", "Annualized ") %>%
