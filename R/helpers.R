@@ -1,5 +1,113 @@
 EPSILON <- 1e-16
 
+
+annualizedReturns <- function(Z) {
+    Z <- na.omit(Z)
+    numMonths <- length(Z)
+    if(numMonths > 0) {
+        cumReturn <- cumprod(1.0 + Z)
+        anlReturn <- (cumReturn[length(cumReturn)])^(12/numMonths) - 1.0
+        return(anlReturn)
+    } else {
+        return(NA_real_)
+    }
+}
+
+annualizedStandardDeviation <- function(Z) {
+    Z <- na.omit(Z)
+    numMonths <- length(Z)
+    if(numMonths > 0) {
+        stdev <- sd(Z) * sqrt(12)
+        return(stdev)
+    } else {
+        return(NA_real_)
+    }
+}
+
+annualizedSemiDeviation <- function(Z) {
+    semidev <- SemiDeviation(Z) * sqrt(12)
+    return(semidev)
+}
+
+
+getPerformanceMetrics <- function(dfReturns) {
+
+    dfReturns <- dfReturns %>% drop_na()
+
+    firstDate <- first(dfReturns$Date) ; lastDate <- last(dfReturns$Date)
+    firstYearMonth <- paste(lubridate::month(firstDate, label=T, abbr=T),lubridate::year(firstDate))
+    lastYearMonth <- paste(lubridate::month(lastDate, label=T, abbr=T),lubridate::year(lastDate))
+    metricsHeading <- paste(firstYearMonth, lastYearMonth, sep = " - ")
+
+    df <- dfReturns %>%
+        select(-TBILLS) %>%
+        gather(Symbol, Ra, -Date) %>%
+        select(Symbol, Date, Ra) %>%
+        left_join(dfReturns %>% select(Date, TBILLS), by = "Date") %>%
+        mutate(Symbol = factor(Symbol, levels = unique(Symbol))) %>%
+        mutate(Excess = Ra - TBILLS) %>%
+        mutate(Downside = ifelse((Ra + 1e-12) > TBILLS, NA, Ra)) %>%
+        group_by(Symbol)
+
+    riskFreeRatePercent <- annualizedReturns(df$TBILLS)
+    riskFreeRatePercent <- paste0(round(riskFreeRatePercent*100, digits = 2), "%")
+    dfAnlReturn <- df %>% dplyr::summarise(AnnualizedReturn = annualizedReturns(Ra))
+    dfAnlReturnExcess <- df %>% dplyr::summarise(AnnualizedReturnExcess = annualizedReturns(Excess))
+    dfAnlStdev <- df %>% dplyr::summarise(AnnualizedStdDev = annualizedStandardDeviation(Ra))
+    dfSemiDev <- df %>% dplyr::summarise(AnnualizedSemidev = annualizedSemiDeviation(Downside))
+    dfWorstDD <- df %>% dplyr::summarise(WorstDD = suppressWarnings(maxDrawdown(Ra, invert = F)))
+    dfSkewness <- df %>% dplyr::summarise(Skewness = skewness(Ra))
+
+    dfMonthwise <- df %>% dplyr::summarise(`Worst Month` = min(Ra),
+                                           `Best Month` = max(Ra),
+                                           `Profitable Months` = mean((Ra + 1e-12) >= 0.0))
+
+    dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfSkewness, dfMonthwise),
+                     inner_join, by = "Symbol") %>%
+        mutate(Sharpe = AnnualizedReturnExcess/AnnualizedStdDev,
+               Sortino = AnnualizedReturnExcess/AnnualizedSemidev,
+               Calmar = AnnualizedReturn/abs(WorstDD)) %>%
+        select(-AnnualizedReturnExcess, -AnnualizedSemidev, -Sortino) %>%
+        select(Symbol, AnnualizedReturn, AnnualizedStdDev, Sharpe, Skewness, Calmar, WorstDD, everything())
+
+    vColNames <- colnames(dfPerf) %>%
+        str_replace_all("Annualized", "Annualized ") %>%
+        str_replace("Sharpe", sprintf("Sharpe (Rf = %s)", riskFreeRatePercent)) %>%
+        str_replace("Sortino", sprintf("Sortino (MAR = %s)", riskFreeRatePercent)) %>%
+        str_replace("Calmar", "Calmar Ratio") %>%
+        str_replace("WorstDD", "Worst Drawdown")
+    colnames(dfPerf) <- vColNames
+
+    return(dfPerf)
+}
+
+
+getRecentReturns <- function(dfReturns, pastYears = 12) {
+    mostRecentMonthNumber <- dfReturns %>% slice(n()) %>% pull(Date) %>% lubridate::month()
+    numMonthsFromTail <- pastYears*12 + mostRecentMonthNumber
+
+    dfReturns <- dfReturns %>% tail(numMonthsFromTail)
+
+    dfMTD <- dfReturns %>%
+        slice(n()) %>%
+        dplyr::rename(Year = Date) %>%
+        mutate(Year = paste(lubridate::month(Year, label = TRUE, abbr = TRUE), lubridate::year(Year)))
+
+    dfYearly <- table.CalendarReturns(data.frame(dfReturns, row.names = 1), as.perc = FALSE, digits = 4) %>%
+        timetk::tk_tbl(rename_index = "Year", silent = TRUE) %>%
+        arrange(desc(Year)) %>%
+        mutate(Year = as.character(Year)) %>%
+        select(-c(2:13)) %>%
+        head(pastYears)
+
+    dfRecentReturns <- bind_rows(dfMTD, dfYearly) %>%
+        data.frame(row.names = 1) %>%
+        t() %>%
+        timetk::tk_tbl(rename_index = "Symbol", silent = TRUE) %>%
+        mutate(Symbol = factor(Symbol, levels = unique(Symbol)))
+}
+
+
 getMonthlyRiskFreeReturns <- function(symbol = "DTB3", firstDownloadDate = "2009-01-01") {
     dfRiskFree <- tq_get(symbol, get = "economic.data", from = firstDownloadDate) %>%
         set_names(c("Date","TBILLS")) %>%
