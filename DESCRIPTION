@@ -17,5 +17,6 @@ Depends:
     cowplot,
     gplots,
     RODBC,
-    jsonlite
+    jsonlite,
+    lubridate
 RoxygenNote: 6.0.1
