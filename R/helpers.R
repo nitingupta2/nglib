@@ -299,13 +299,28 @@ getCorrelations <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
 }
 
 
-# Generate a table of drawdowns
+# Generate a data.frame of drawdowns
 getDrawdowns <- function(dfReturns, colIndex=NA, colName, top=5) {
     if(!is.na(colIndex)) {
-        return(table.Drawdowns(data.frame(dfReturns[c(1, colIndex)], row.names = 1)))
+        df <- data.frame(dfReturns[c(1, colIndex)], row.names = 1)
     } else {
-        return(table.Drawdowns(data.frame(dfReturns[c("Date", colName)], row.names = 1)))
+        df <- data.frame(dfReturns[c("Date", colName)], row.names = 1)
     }
+
+    dfDrawdowns <- suppressWarnings(table.Drawdowns(df)) %>% tbl_df() %>%
+        set_names(c("Peak","Trough","Recovery","Depth","Length","ToTrough","ToRecovery")) %>%
+        mutate_at(.vars = c("Length","ToTrough","ToRecovery"), as.integer) %>%
+        mutate(PeakDate = Peak, TroughDate = Trough, RecoveryDate = Recovery) %>%
+        mutate_at(.vars = c("Peak", "Trough", "Recovery"),
+                  function(Z) ifelse(!is.na(Z), paste(lubridate::month(Z, label=T, abbr=T),lubridate::year(Z)), NA)) %>%
+        arrange(PeakDate) %>%
+        mutate(Peak = factor(Peak, levels = unique(Peak))) %>%
+        arrange(TroughDate) %>%
+        mutate(Trough = factor(Trough, levels = unique(Trough))) %>%
+        arrange(RecoveryDate) %>%
+        mutate(Recovery = factor(Recovery, levels = unique(Recovery))) %>%
+        select(-PeakDate, -TroughDate, -RecoveryDate) %>%
+        arrange(Depth)
 }
 
 
