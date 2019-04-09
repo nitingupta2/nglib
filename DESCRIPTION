@@ -18,5 +18,6 @@ Depends:
     gplots,
     RODBC,
     jsonlite,
-    lubridate
+    lubridate,
+    timetk
 RoxygenNote: 6.0.1
