@@ -165,7 +165,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
         hc_chart(zoomType = "x") %>%
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
-        hc_yAxis(labels = list(format = "{value}%"), opposite = FALSE) %>%
+        hc_yAxis(labels = list(format = "${value}"), title = list(text = "Growth of $100"), opposite = FALSE) %>%
         hc_tooltip(split = TRUE) %>%
         hc_title(text = "Cumulative Performance") %>%
         hc_legend(enabled = TRUE)
