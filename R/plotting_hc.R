@@ -160,20 +160,22 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
                               '<b>: '+ Highcharts.numberFormat(this.change-100.0, 2) +'%' + '</b>';
                             }")
 
-    # plot cumulative returns and drawdowns
+    # plot cumulative returns
     hcplot <- highchart(type = "chart") %>%
         hc_chart(zoomType = "x") %>%
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
         hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
-        hc_tooltip(split = TRUE) %>%
         hc_legend(enabled = TRUE)
 
     for(i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
         hcplot <- hcplot %>%
-            hc_add_series(xtCumReturns[,strategyName], name = strategyName, tooltip = list(pointFormatter = pointFormatter_perf),
+            hc_add_series(xtCumReturns[,strategyName], name = strategyName,
                           id = glue::glue("{strategyName}_perf"), compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
+        # hcplot <- hcplot %>%
+        #     hc_add_series(xtCumReturns[,strategyName], name = strategyName, tooltip = list(pointFormatter = pointFormatter_perf),
+        #                   id = glue::glue("{strategyName}_perf"), compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
     }
     hcplot <- hcplot %>% hc_colors(vColors)
 
