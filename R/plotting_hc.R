@@ -155,10 +155,13 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
                          list(type = "year", count = 20, text = "20y"), list(type = "all", text = "All"))
 
     # tooltips
-    pointFormatter_perf <- JS("function() {
-                              return '<span style=\"color:' + this.series.color + ';font-weight:bold\">'+ this.series.name +
-                              '<b>: '+ Highcharts.numberFormat(this.change-100.0, 2) +'%' + '</b>';
-                            }")
+    # pointFormatter_perf <- JS("function() {
+    #                           return '<span style=\"color:' + this.series.color + ';font-weight:bold\">'+ this.series.name +
+    #                           '<b>: '+ Highcharts.numberFormat(this.change-100.0, 2) +'%' + '</b>';
+    #                         }")
+
+    pointFormatter_perf <- paste0('<tr><td style="color: {series.color}; font-weight: bold">{series.name}: </td> + ',
+                                  '<td style="text-align: right"><b>${point.change}</b></td></tr>')
 
     # plot cumulative returns
     hcplot <- highchart(type = "chart") %>%
@@ -166,13 +169,19 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
         hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
-        hc_legend(enabled = TRUE)
+        hc_legend(enabled = TRUE) %>%
+        hc_tooltip(shared = TRUE, useHTML = TRUE,
+                   xDateFormat = "%b %e, %Y",
+                   headerFormat = "{point.key}<br><table>",
+                   pointFormat = pointFormatter_perf,
+                   footerFormat = "</table>",
+                   valueDecimals = 2,
+                   changeDecimals = 2)
 
     for(i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
         hcplot <- hcplot %>%
-            hc_add_series(xtCumReturns[,strategyName], name = strategyName,
-                          id = glue::glue("{strategyName}_perf"), compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
+            hc_add_series(xtCumReturns[,strategyName], name = strategyName, compare = "percent", compareBase = 100)
         # hcplot <- hcplot %>%
         #     hc_add_series(xtCumReturns[,strategyName], name = strategyName, tooltip = list(pointFormatter = pointFormatter_perf),
         #                   id = glue::glue("{strategyName}_perf"), compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
