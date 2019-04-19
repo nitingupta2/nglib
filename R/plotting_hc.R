@@ -160,13 +160,13 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
                                   '<td style="text-align: right"><b>${point.change}</b></td></tr>')
 
     # plot cumulative returns
-    hcplot <- highchart(type = "chart") %>%
+    hcplot <- highchart(type = "stock") %>%
         hc_chart(zoomType = "x") %>%
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
-        hc_xAxis(type = "datetime", title = list(text = ""), startOnTick = FALSE) %>%
+        hc_xAxis(type = "datetime", title = list(text = "")) %>%
         hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
         hc_legend(enabled = TRUE) %>%
-        hc_tooltip(shared = TRUE, useHTML = TRUE,
+        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE,
                    xDateFormat = "%b %e, %Y",
                    headerFormat = "{point.key}<br><table>",
                    pointFormat = pointFormatter_perf,
@@ -176,8 +176,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
     for(i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
         hcplot <- hcplot %>%
-            hc_add_series(xtCumReturns[,strategyName], name = strategyName, pointStart = min(dfCumReturns$Date),
-                          compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
+            hc_add_series(xtCumReturns[,strategyName], name = strategyName, compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
     }
     hcplot <- hcplot %>% hc_colors(vColors)
 
