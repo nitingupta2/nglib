@@ -94,8 +94,9 @@ plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily
 
     hchart(mCor) %>%
         hc_colorAxis(stops = NULL) %>%
-        hc_colorAxis(min = -1, max = 1, stops = lColorStops) %>%
+        hc_colorAxis(min = -1, max = 1, stops = lColorStops, reversed = FALSE) %>%
         hc_title(text = plotTitle) %>%
+        hc_legend(align = "right", layout = "vertical", verticalAlign = "middle") %>%
         hc_plotOptions(series = list(dataLabels = list(enabled = TRUE, formatter = pointFormatter)))
 }
 
