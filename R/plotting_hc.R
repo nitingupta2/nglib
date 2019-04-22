@@ -163,6 +163,8 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
     hcplot <- highchart(type = "stock") %>%
         hc_chart(zoomType = "x") %>%
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
+        hc_navigator(enabled = FALSE) %>%
+        hc_scrollbar(enabled = FALSE) %>%
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
         hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
         hc_legend(enabled = TRUE) %>%
