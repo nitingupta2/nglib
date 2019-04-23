@@ -71,8 +71,8 @@ getPerformanceMetrics <- function(dfReturns) {
 
     vColNames <- colnames(dfPerf) %>%
         str_replace_all("Annualized", "Annualized ") %>%
-        str_replace("Sharpe", sprintf("Sharpe (Rf=%s)", riskFreeRatePercent)) %>%
-        str_replace("Sortino", sprintf("Sortino (MAR=%s)", riskFreeRatePercent)) %>%
+        str_replace("Sharpe", sprintf("Sharpe Rf=%s", riskFreeRatePercent)) %>%
+        str_replace("Sortino", sprintf("Sortino MAR=%s", riskFreeRatePercent)) %>%
         str_replace("Calmar", "Calmar Ratio") %>%
         str_replace("WorstDD", "Worst Drawdown")
     colnames(dfPerf) <- vColNames
