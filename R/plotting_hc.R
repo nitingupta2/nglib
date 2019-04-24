@@ -170,7 +170,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
         hc_legend(enabled = TRUE) %>%
         hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE,
                    xDateFormat = "%b %Y",
-                   headerFormat = "{point.key}<br><table>",
+                   headerFormat = "<center/>{point.key}<br><table>",
                    pointFormat = pointFormatter_perf,
                    footerFormat = "</table>")
 

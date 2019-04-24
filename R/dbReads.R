@@ -6,6 +6,10 @@ getDatabaseConnectionString <- function() {
     connString <- glue::glue('driver={service};server=PREDATOR\\SQLEXPRESS;database=MarketData;Persist Security Info=True;username=nitin;password={passwd}')
 }
 
+# Read data for testing
+dbReadTestData <- function() {
+    dfReturns <- dbReadBenchmarksData(c("SP500TR","R2000TR","GEM","BTOP50"))
+}
 
 # Read Benchmarks Data
 dbReadBenchmarksData <- function(vBenchmarks, tableName = "BenchmarksData", removeNAs = T) {
