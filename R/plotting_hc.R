@@ -168,7 +168,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
         hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
         hc_legend(enabled = TRUE) %>%
-        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE,
+        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, sort = TRUE,
                    xDateFormat = "%b %Y",
                    headerFormat = "<center/>{point.key}<br><table>",
                    pointFormat = pointFormatter_perf,
