@@ -157,7 +157,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
 
     # tooltips
     pointFormatter_perf <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
-                                  '<td style="text-align: right"><b>${point.change}</b></td></tr>')
+                                  '<td style="text-align: right"><b>${point.change:.2f}</b></td></tr>')
 
     # plot cumulative returns
     hcplot <- highchart(type = "stock") %>%
@@ -172,8 +172,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
                    xDateFormat = "%b %Y",
                    headerFormat = "{point.key}<br><table>",
                    pointFormat = pointFormatter_perf,
-                   footerFormat = "</table>",
-                   changeDecimals = 2)
+                   footerFormat = "</table>")
 
     for(i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
