@@ -135,6 +135,44 @@ plotRollingExcessReturns_hc <- function(dfReturns, dfRecessions=NULL, coreStrate
     hcplot
 }
 
+hc_tooltip_sorted <- function(hc, ...) {
+    # http://stackoverflow.com/a/16954666/829971
+    hc %>%
+        highcharter::hc_tooltip(
+            shared = TRUE,
+            formatter = JS(
+                "function(tooltip){
+                    function isArray(obj) {
+                        return Object.prototype.toString.call(obj) === '[object Array]';
+                    }
+
+                    function splat(obj) {
+                        return isArray(obj) ? obj : [obj];
+                    }
+
+                    var items = this.points || splat(this), series = items[0].series, s;
+
+                    // sort the values
+                    items.sort(function(a, b){
+                        return ((a.y < b.y) ? -1 : ((a.y > b.y) ? 1 : 0));
+                    });
+                    items.reverse();
+
+                    return tooltip.defaultFormatter.call(this, tooltip);
+                }"
+            )
+        )
+}
+
+hc_tooltip_sorted_table <- function(hc, ...) {
+    hc <- hc_tooltip_sorted(hc)
+
+    if(length(list(...))) {
+        hc <- highcharter:::.hc_opt(hc, "tooltip", ...)
+    }
+
+    hc
+}
 
 # Plot interactive Returns chart
 plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withgrey") {
@@ -168,7 +206,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
         hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
         hc_legend(enabled = TRUE) %>%
-        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, sort = TRUE,
+        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE,
                    xDateFormat = "%b %Y",
                    headerFormat = "<center/>{point.key}<br><table>",
                    pointFormat = pointFormatter_perf,
