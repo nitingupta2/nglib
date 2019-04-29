@@ -254,12 +254,12 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "w
                          list(type = "year", count = 20, text = "20y"), list(type = "all", text = "All"))
 
     # tooltips
-    # tooltip_format_perf <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>{point.y:.2f}</b><br/>"
     tooltip_format_dd <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>{point.y:.2f}%</b><br/>"
-    pointFormatter_perf <- JS("function() {
-                              return '<span style=\"color:' + this.series.color + ';font-weight:bold\">'+ this.series.name +
-                              '<b>: '+ Highcharts.numberFormat(this.change-100.0, 2) +'%' + '</b>';
-                            }")
+    tooltip_format_perf <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>${point.change:.2f}</b><br/>"
+    # pointFormatter_perf <- JS("function() {
+    #                           return '<span style=\"color:' + this.series.color + ';font-weight:bold\">'+ this.series.name +
+    #                           '<b>: '+ Highcharts.numberFormat(this.change-100.0, 2) +'%' + '</b>';
+    #                         }")
 
     # plot cumulative returns and drawdowns
     hcplot <- highchart(type = "chart") %>%
@@ -277,7 +277,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "w
     for(i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
         hcplot <- hcplot %>%
-            hc_add_series(xtCumReturns[,strategyName], yAxis = 0, name = strategyName, tooltip = list(pointFormatter = pointFormatter_perf),
+            hc_add_series(xtCumReturns[,strategyName], yAxis = 0, name = strategyName, tooltip = list(pointFormat = tooltip_format_perf),
                           id = glue::glue("{strategyName}_perf"), compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
     }
     for(i in seq_along(vStrategyNames)) {
