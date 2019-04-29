@@ -200,7 +200,8 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
     # plot cumulative returns
     hcplot <- highchart(type = "stock") %>%
         hc_chart(zoomType = "x") %>%
-        hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
+        hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE,
+                         buttonTheme = list(states = list(select = list(fill = "#3C8DBC", style = list(color = "#FFFFFF"))))) %>%
         hc_navigator(enabled = FALSE) %>%
         hc_scrollbar(enabled = FALSE) %>%
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
