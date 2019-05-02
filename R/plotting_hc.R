@@ -141,9 +141,9 @@ hc_tooltip_sorted <- function(hc, ...) {
         highcharter::hc_tooltip(
             shared = TRUE,
             formatter = JS(
-                "function(tooltip){
+                'function(tooltip){
                     function isArray(obj) {
-                        return Object.prototype.toString.call(obj) === '[object Array]';
+                        return Object.prototype.toString.call(obj) === "[object Array]";
                     }
 
                     function splat(obj) {
@@ -154,12 +154,12 @@ hc_tooltip_sorted <- function(hc, ...) {
 
                     // sort the values
                     items.sort(function(a, b){
-                        return ((a.y < b.y) ? -1 : ((a.y > b.y) ? 1 : 0));
+                        return ((a.percentage < b.percentage) ? -1 : ((a.percentage > b.percentage) ? 1 : 0));
                     });
                     items.reverse();
 
                     return tooltip.defaultFormatter.call(this, tooltip);
-                }"
+                }'
             )
         )
 }
