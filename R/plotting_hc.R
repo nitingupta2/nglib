@@ -170,7 +170,6 @@ hc_tooltip_sorted_table <- function(hc, ...) {
     if(length(list(...))) {
         hc <- highcharter:::.hc_opt(hc, "tooltip", ...)
     }
-
     hc
 }
 

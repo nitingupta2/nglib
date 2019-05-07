@@ -80,6 +80,20 @@ getPlotColors <- function(palette = c("main","withgrey","pnl","weights","metro",
 }
 
 
+#' Convert text size in mm to points for annotating plots
+#'
+#' @param x
+#'
+#' @return
+#' @export
+#'
+#' @examples
+convert_mm_to_pts <- function(x) {
+    as.numeric(grid::convertUnit(grid::unit(x, "pt"), "mm"))
+}
+
+
+
 #' Sets colors in ggplot2 plots
 #'
 #' @param palette

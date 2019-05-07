@@ -154,7 +154,7 @@ getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-
 
     # Capitalize column names and set log return
     dfSymbol <- dfSymbol %>%
-        set_names(Hmisc::capitalize(colnames(.))) %>%
+        rename_all(str_to_title) %>%
         mutate(LogReturn = log(1 + Return))
     return(dfSymbol)
 }
@@ -165,23 +165,20 @@ getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-
 # Date, <colname_initial> OR <colname_initial> with Date in rownames
 getMonthlyReturns <- function(dfDailyReturns, removeNAs = T) {
 
-    numCols <- ncol(dfDailyReturns)
-    if(numCols==1L) {
-        secname <- colnames(dfDailyReturns)[1]
-        dfDailyReturns[,2] <- dfDailyReturns[,1] ; colnames(dfDailyReturns)[2] <- secname
-        dfDailyReturns[,1] <- rownames(dfDailyReturns) ; colnames(dfDailyReturns)[1] <- "DailyDate"
+    if(ncol(dfDailyReturns)==1L) {
+        dfDailyReturns <- dfDailyReturns %>% rownames_to_column(var = "DailyDate")
     }
     else {
         colnames(dfDailyReturns)[1] <- "DailyDate"
     }
 
     cumreturn <- function(Z) {if(sum(is.na(Z))==length(Z)) return(NA) else return(prod(1L + Z, na.rm = T) - 1L)}
+
     dfMonthlyReturns <- dfDailyReturns %>%
-        mutate(MonthlyDate = as.Date(as.yearmon(DailyDate), frac=1)) %>%
+        mutate(Date = as.Date(as.yearmon(DailyDate), frac=1)) %>%
         dplyr::select(-DailyDate) %>%
-        group_by(MonthlyDate) %>%
-        dplyr::summarise_all(funs(cumreturn))
-    colnames(dfMonthlyReturns)[1] <- "Date"
+        group_by(Date) %>%
+        dplyr::summarise_all(list(cumreturn))
 
     if(removeNAs) dfMonthlyReturns <- dfMonthlyReturns %>% drop_na()
 
@@ -330,7 +327,7 @@ getLatestPerformance <- function(dfReturns, lPastYears=list('ALL'), ishtmlOutput
     dfReturns <- dfReturns %>% data.frame(row.names = 1) %>% na.omit()
 
     hasRiskFreeReturns <- FALSE
-    vRiskFreeRates <- c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","SARINR","TBILLS","TBILL_3M","LIBOR.USD","Cash")
+    vRiskFreeRates <- c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR","TBILLS","TBILL_3M","Cash")
     if(colnames(dfReturns)[1] %in% vRiskFreeRates) hasRiskFreeReturns <- TRUE
 
     firstDate <- as.Date(first(rownames(dfReturns))) ; lastDate <- as.Date(last(rownames(dfReturns)))

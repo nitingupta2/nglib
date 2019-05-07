@@ -29,9 +29,7 @@ dbReadBenchmarksData <- function(vBenchmarks, tableName = "BenchmarksData", remo
             select(one_of(c("Date", vBenchmarks)))
     }
 
-    if(removeNAs) {
-        df <- df %>% drop_na()
-    }
+    if(removeNAs) df <- df %>% drop_na()
     return(df)
 }
 
@@ -54,9 +52,7 @@ dbReadEquitiesData <- function(vEquities, tableName = "EquitiesData", removeNAs 
             select(one_of(c("Date", vEquities)))
     }
 
-    if(removeNAs) {
-        df <- df %>% drop_na()
-    }
+    if(removeNAs) df <- df %>% drop_na()
     return(df)
 }
 
@@ -97,9 +93,7 @@ dbReadIndexRawData <- function(vSecurities, tableName = "IndexRawData", removeNA
             select(one_of(c("Date", vSecurities)))
     }
 
-    if(removeNAs) {
-        df <- df %>% drop_na()
-    }
+    if(removeNAs) df <- df %>% drop_na()
     return(df)
 }
 
@@ -119,9 +113,7 @@ dbReadFuturesData <- function(secID, tableName = "FuturesData", removeNAs = T) {
             rename(Date = DailyDate)
     }
 
-    if(removeNAs) {
-        df <- na.omit(df)
-    }
+    if(removeNAs) df <- df %>% drop_na()
     return(df)
 }
 
