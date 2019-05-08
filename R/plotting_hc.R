@@ -124,7 +124,7 @@ plotRollingExcessReturns_hc <- function(dfReturns, dfRecessions=NULL, coreStrate
         hc_chart(zoomType = "x") %>%
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
-        hc_yAxis(labels = list(format = "{value}%"), opposite = FALSE) %>%
+        hc_yAxis(type = "logarithmic", labels = list(format = "{value}%"), opposite = FALSE) %>%
         hc_title(text = plotTitle) %>%
         hc_tooltip(pointFormat = tooltip_format, valueDecimals = 2)
 
