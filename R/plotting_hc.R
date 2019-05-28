@@ -78,8 +78,9 @@ plotPortfolioWeights_hc <- function(dfWeights) {
 plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly")) {
 
     mCor <- cor(dfReturns[-1])
-    vOrder <- corrplot::corrMatOrder(mCor, order = "hclust")
-    mCor <- mCor[vOrder, vOrder]
+    mCor <- reorderCorrelationMatrix(mCor)
+    # vOrder <- corrplot::corrMatOrder(mCor, order = "hclust")
+    # mCor <- mCor[vOrder, vOrder]
 
     firstPerfDate <- as.Date(first(dfReturns$Date))
     lastPerfDate <- as.Date(last(dfReturns$Date))

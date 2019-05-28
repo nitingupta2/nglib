@@ -265,6 +265,13 @@ getRecessionIntervals <- function(dfReturns, dfRecessions) {
     return(dfRect)
 }
 
+# Reorder correlation matrix by hierarchical clustering
+reorderCorrelationMatrix <- function(mCor) {
+    dd <- as.dist((1-mCor)/2)
+    hc <- hclust(dd)
+    mCor <- mCor[hc$order, hc$order]
+    return(mCor)
+}
 
 # Returns correlations of monthly returns of a given strategy with other strategies, in the time frames
 getCorrelations <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
