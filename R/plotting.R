@@ -305,3 +305,32 @@ plotYearlyRankings <- function(dfReturns, outlineAsset=NA, plotCtr=NA) {
 
     return(plotRanking)
 }
+
+# Plot Correlations
+############################################################################################
+plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly")) {
+    firstPerfDate <- as.Date(first(dfReturns$Date))
+    lastPerfDate <- as.Date(last(dfReturns$Date))
+    plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
+    plotTitle <- paste(plotTitle, "\n", format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
+
+    dfCor <- cor(dfReturns[-1]) %>%
+        round(digits = 2) %>%
+        reorderCorrelationMatrix() %>%
+        tk_tbl(rename_index = "Var1") %>%
+        gather(Var2, CorVal, -Var1) %>%
+        mutate(Var1 = fct_inorder(Var1),
+               Var1 = fct_rev(Var1),
+               Var2 = factor(Var2, levels = levels(Var1)),
+               Var2 = fct_rev(Var2))
+
+    ggplot(dfCor, aes(x = Var1, y = Var2, fill = CorVal)) +
+        geom_tile(color = "white") +
+        scale_fill_gradient2(name = "", low = "#D11141", mid = "#F8F5F5", high = "#00AEDB", midpoint = 0, limit = c(-1, 1)) +
+        labs(title = plotTitle, x = "", y = "") +
+        theme_minimal() +
+        theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+        theme(plot.title=element_text(hjust = 0.5, vjust = 1, size=12)) +
+        coord_fixed() +
+        geom_text(aes(Var1, Var2, label = CorVal), color = "black", size = 3)
+}
