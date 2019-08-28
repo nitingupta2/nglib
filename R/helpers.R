@@ -475,6 +475,12 @@ getSignificantDigits <- function(x, d=8) {
 }
 
 
+#PRE: x is a numeric vector
+#POST: returns the k-period percent difference similar to quantmod::Delt function
+pct_diff <- function(x, k = 1) {
+    return(x/dplyr::lag(x, n = k) - 1)
+}
+
 #PRE: contract is of the form where last 6 digits are 201403
 #POST: convert the month digits to characters 2014H
 replaceByMonthChar <- function(contract) {
