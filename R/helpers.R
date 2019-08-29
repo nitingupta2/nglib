@@ -477,8 +477,12 @@ getSignificantDigits <- function(x, d=8) {
 
 #PRE: x is a numeric vector
 #POST: returns the k-period percent difference similar to quantmod::Delt function
-pct_diff <- function(x, k = 1) {
+pct_diff_lagging <- function(x, k = 1) {
     return(x/dplyr::lag(x, n = k) - 1)
+}
+
+pct_diff_leading <- function(x, k = 1) {
+    return(x/dplyr::lead(x, n = k) - 1)
 }
 
 #PRE: contract is of the form where last 6 digits are 201403
