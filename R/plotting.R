@@ -98,7 +98,7 @@ plotPerformance <- function(dfReturns, dfRecessions=NULL, plotMainTitle=NA, plot
     plotDD <- plotDD +
         geom_line(aes(x=Date, y=Drawdown, group=Security, color=Security), size=0.7) +
         scale_x_date(breaks=dateBreaks,date_minor_breaks="1 year",labels=date_format("%Y"),expand=c(0.05, 0)) +
-        scale_y_continuous(labels=percent_format(), expand = c(0, 0)) +
+        scale_y_continuous(labels=percent_format(accuracy = 1), expand = c(0, 0)) +
         labs(y = "Drawdown", caption = captionTitle) +
         theme_light() +
         theme(axis.ticks.x=element_blank(),
@@ -171,7 +171,7 @@ plotRollingExcessReturns <- function(dfReturns, dfRecessions=NULL, coreStrategyN
         geom_bar(aes(x=Date, y=ExcessReturn, fill=(ExcessReturn < 0)), stat="identity") +
         scale_fill_quant_manual(palette = "pnl") +
         scale_x_date(breaks=dateBreaks,date_minor_breaks="1 year",labels=date_format("%Y"),expand=c(0.05, 0)) +
-        scale_y_continuous(labels=percent_format()) +
+        scale_y_continuous(labels=percent_format(accuracy = 1)) +
         labs(title = plotTitle, y = "Excess Return") +
         annotate("text",x=lastPerfDate,y=0,label=sprintf("Copyright \U00A9 Nitin Gupta"),
                  hjust=1,vjust=-1.5,col="black",cex=2.5,fontface="bold", alpha=0.4) +
@@ -234,7 +234,7 @@ plotPortfolioWeights <- function(dfWeights, plotMainTitle = NA, plotCtr = NA) {
                  stat = "identity", width = 100) +
         scale_fill_quant(palette = colorPalette) +
         scale_x_date(breaks=dateBreaks,date_minor_breaks="1 year",labels=date_format("%Y"),expand=c(0.05,0)) +
-        scale_y_continuous(breaks = seq(0, 1, 0.1)) +
+        scale_y_continuous(breaks = seq(0, 1, 0.1), labels=percent_format(accuracy = 1)) +
         labs(title = plotTitle, x = "") +
         theme_light() +
         theme(axis.ticks.x=element_blank(),
