@@ -41,7 +41,7 @@ theme_quant <- function(base_size = 11,
               legend.background = element_rect(colour = "lightgrey", size = rel(0.5)),
               strip.background = element_rect(fill = "lightgrey"),
               strip.text = element_text(hjust = 0.5, size = strip_text_size, margin = margin(b=strip_text_margin)),
-              plot.subtitle = element_text(hjust = 0, size = subtitle_size, margin = margin(b=subtitle_margin)),
+              plot.subtitle = element_text(hjust = 0.5, size = subtitle_size, margin = margin(b=subtitle_margin)),
               plot.title = element_text(hjust = 0.5, size = plot_title_size, margin = margin(b=plot_title_margin)))
     base_theme
 }
