@@ -474,6 +474,12 @@ getSignificantDigits <- function(x, d=8) {
     format(round(x, d), nsmall=d, scientific=F)
 }
 
+#PRE: x is a numeric or character/factor vector
+#POST: returns the value which has the highest frequency, i.e. mode
+find_mode <- function(x) {
+    ux <- unique(x)
+    ux[which.max(tabulate(match(x, ux)))]
+}
 
 #PRE: x is a numeric vector
 #POST: returns the k-period percent difference similar to quantmod::Delt function
