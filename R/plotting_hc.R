@@ -75,17 +75,17 @@ plotPortfolioWeights_hc <- function(dfWeights) {
 
 
 # Plot interactive Correlations chart
-plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly")) {
+plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly"), plotTitle = NULL) {
+
+    if(is.null(plotTitle)) {
+        firstPerfDate <- as.Date(first(dfReturns$Date))
+        lastPerfDate <- as.Date(last(dfReturns$Date))
+        plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
+        plotTitle <- paste(plotTitle, format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
+    }
 
     mCor <- cor(dfReturns[-1])
     mCor <- reorderCorrelationMatrix(mCor)
-    # vOrder <- corrplot::corrMatOrder(mCor, order = "hclust")
-    # mCor <- mCor[vOrder, vOrder]
-
-    firstPerfDate <- as.Date(first(dfReturns$Date))
-    lastPerfDate <- as.Date(last(dfReturns$Date))
-    plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
-    plotTitle <- paste(plotTitle, format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
 
     pointFormatter <- JS("function(){ return Highcharts.numberFormat(this.point.value, 2); }")
 

@@ -307,12 +307,14 @@ plotYearlyRankings <- function(dfReturns, outlineAsset=NA, plotCtr=NA) {
 }
 
 # Plot Correlations
-############################################################################################
-plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly")) {
-    firstPerfDate <- as.Date(first(dfReturns$Date))
-    lastPerfDate <- as.Date(last(dfReturns$Date))
-    plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
-    plotTitle <- paste(plotTitle, "\n", format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
+##############################################################################################################
+plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly"), plotTitle = NULL) {
+    if(is.null(plotTitle)) {
+        firstPerfDate <- as.Date(first(dfReturns$Date))
+        lastPerfDate <- as.Date(last(dfReturns$Date))
+        plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
+        plotTitle <- paste(plotTitle, "\n", format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
+    }
 
     dfCor <- cor(dfReturns[-1]) %>%
         round(digits = 2) %>%
