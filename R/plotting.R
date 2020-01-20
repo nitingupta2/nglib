@@ -309,14 +309,19 @@ plotYearlyRankings <- function(dfReturns, outlineAsset=NA, plotCtr=NA) {
 # Plot Correlations
 ##############################################################################################################
 plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly"), plotTitle = NULL) {
+
+    df <- dfReturns
+
     if(is.null(plotTitle)) {
         firstPerfDate <- as.Date(first(dfReturns$Date))
         lastPerfDate <- as.Date(last(dfReturns$Date))
         plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
         plotTitle <- paste(plotTitle, "\n", format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
+
+        df <- dfReturns %>% select(-Date)
     }
 
-    dfCor <- cor(dfReturns[-1]) %>%
+    dfCor <- cor(df) %>%
         round(digits = 2) %>%
         reorderCorrelationMatrix() %>%
         tk_tbl(rename_index = "Var1") %>%
