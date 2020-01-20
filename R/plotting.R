@@ -333,7 +333,7 @@ plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", 
 
     ggplot(dfCor, aes(x = Var1, y = Var2, fill = CorVal)) +
         geom_tile(color = "white") +
-        scale_fill_gradient2(name = "", low = "#D11141", mid = "#F8F5F5", high = "#00AEDB", midpoint = 0, limit = c(-1, 1)) +
+        scale_fill_gradient2(name = "correlation", low = "#D11141", mid = "#F8F5F5", high = "#00AEDB", midpoint = 0, limit = c(-1, 1)) +
         labs(title = plotTitle, x = "", y = "") +
         theme_minimal() +
         theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
