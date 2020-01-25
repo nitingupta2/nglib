@@ -308,7 +308,7 @@ plotYearlyRankings <- function(dfReturns, outlineAsset=NA, plotCtr=NA) {
 
 # Plot Correlations
 ##############################################################################################################
-plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly"), plotTitle = NULL) {
+plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly"), outlineVar = NA, plotTitle = NULL) {
 
     df <- dfReturns
 
@@ -331,7 +331,7 @@ plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", 
                Var2 = factor(Var2, levels = levels(Var1)),
                Var2 = fct_rev(Var2))
 
-    ggplot(dfCor, aes(x = Var1, y = Var2, fill = CorVal)) +
+    p <- ggplot(dfCor, aes(x = Var1, y = Var2, fill = CorVal)) +
         geom_tile(color = "white") +
         scale_fill_gradient2(name = "correlation", low = "#D11141", mid = "#F8F5F5", high = "#00AEDB", midpoint = 0, limit = c(-1, 1)) +
         labs(title = plotTitle, x = "", y = "") +
@@ -340,4 +340,14 @@ plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", 
         theme(plot.title=element_text(hjust = 0.5, vjust = 1, size=12)) +
         coord_fixed() +
         geom_text(aes(Var1, Var2, label = CorVal), color = "black", size = 3)
+
+    if(!is.na(outlineVar) & outlineVar %in% as.character(dfCor$Var1)) {
+        dfOutline <- dfCor %>% dplyr::filter(Var1 == outlineVar)
+
+        p <- p + geom_tile(data = dfOutline, aes(x = Var2, y = Var1, group = Var1), color = "black", size = 0.75) +
+            geom_tile(data = dfOutline, aes(x = Var1, y = Var2, group = Var2), color = "black", size = 0.75) +
+            geom_text(aes(Var1, Var2, label = CorVal), color = "black", size = 3)
+    }
+
+    return(p)
 }
