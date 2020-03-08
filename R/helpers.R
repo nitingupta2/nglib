@@ -149,7 +149,7 @@ getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-
         }
 
         print(paste("Merging data of", symbol, "and", symbolPrior))
-        dfSymbol <- rbind(dfSymbolPrior, dfSymbol[2:nrow(dfSymbol),])
+        dfSymbol <- bind_rows(dfSymbolPrior, dfSymbol[2:nrow(dfSymbol),])
     }
 
     # Capitalize column names and set log return
