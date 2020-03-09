@@ -109,7 +109,7 @@ getRecentReturns <- function(dfReturns, pastYears = 12) {
 
 getMonthlyRiskFreeReturns <- function(symbol = "DTB3", firstDownloadDate = "2009-01-01") {
     dfRiskFree <- tq_get(symbol, get = "economic.data", from = firstDownloadDate) %>%
-        set_names(c("Date","TBILLS")) %>%
+        set_names(c("Symbol","Date","TBILLS")) %>%
         mutate(Year = lubridate::year(Date)) %>%
         add_count(Year) %>%
         mutate(TBILLS = if_else(n > 250, TBILLS/(100*n), TBILLS/(100*261))) %>%
