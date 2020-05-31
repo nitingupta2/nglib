@@ -467,6 +467,9 @@ getFuturesBusinessDates <- function(startDate, endDate) {
     return(as.character(as.Date(bizdts)))
 }
 
+#PRE: User-defined operator - x and y are vectors
+#POST: returns a logical vector of length(x) where x is not in y
+`%notin%` <- function(x, y) !(`%in%`(x, y))
 
 #PRE: x is a numeric vector with arbitrary number of decimal places
 #POST: returns a character vector with values upto d significant decimals
