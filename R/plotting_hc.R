@@ -42,7 +42,7 @@ plotPortfolioWeights_hc <- function(dfWeights) {
 
     # Determine Cash Weights
     dfWeightsFinal <- dfWeights %>%
-        tbl_df() %>%
+        as_tibble() %>%
         dplyr::filter(SecurityID != "Cash") %>%
         mutate(Date = as.Date(as.character(Date)),
                Weight = as.numeric(as.character(Weight))) %>%

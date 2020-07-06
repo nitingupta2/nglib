@@ -138,7 +138,7 @@ getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-
             dfSymbolPrior <- dfSymbolPrior %>%
                 select(c(1, 2)) %>%
                 set_names(c("date", "adjusted")) %>%
-                tbl_df() %>%
+                as_tibble() %>%
                 mutate(open=NA_real_, high=NA_real_, low=NA_real_, close=NA_real_, volume=NA_real_) %>%
                 select(date, open:volume, adjusted) %>%
                 tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
@@ -311,7 +311,7 @@ getDrawdowns <- function(dfReturns, colIndex=NA, colName, top=5) {
         df <- data.frame(dfReturns[c("Date", colName)], row.names = 1)
     }
 
-    dfDrawdowns <- suppressWarnings(table.Drawdowns(df)) %>% tbl_df() %>%
+    dfDrawdowns <- suppressWarnings(table.Drawdowns(df)) %>% as_tibble() %>%
         set_names(c("Peak","Trough","Recovery","Depth","Length","ToTrough","ToRecovery")) %>%
         mutate_at(.vars = c("Length","ToTrough","ToRecovery"), as.integer) %>%
         mutate(PeakDate = Peak, TroughDate = Trough, RecoveryDate = Recovery) %>%
