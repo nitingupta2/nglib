@@ -138,7 +138,7 @@ dbReadFXRatesData <- function(vSecurities, tableName = "FXRatesData") {
 
     if(nrow(df) > 0) {
         df <- df %>%
-            as.tibble() %>%
+            as_tibble() %>%
             tidyr::spread(SecurityID, DailyFXRate) %>%
             drop_na() %>%
             mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
@@ -161,7 +161,7 @@ dbReadRiskFreeRatesData <- function(vSecurities, tableName = "RiskFreeRatesData"
 
     if(nrow(df) > 0) {
         df <- df %>%
-            as.tibble() %>%
+            as_tibble() %>%
             tidyr::spread(SecurityID, DailyReturn) %>%
             drop_na() %>%
             mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
