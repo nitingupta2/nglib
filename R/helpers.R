@@ -197,6 +197,30 @@ getCalendarReturns <- function(dfReturns) {
 }
 
 
+# Returns a numeric vector of indices matching the rebalance dates
+getRebalanceEndPoints <- function(xtReturns, rebalanceFrequency = "months", rebalanceOffsetDays = 0) {
+
+    vEndPoints <- xts::endpoints(xtReturns, on = rebalanceFrequency)
+
+    last_value <- dplyr::last(vEndPoints)
+
+    vEndPoints <- vEndPoints + rebalanceOffsetDays
+    vEndPoints[vEndPoints < 1] <- 1
+    vEndPoints[vEndPoints > last_value] <- last_value
+    vEndPoints <- unique(vEndPoints)
+    return(vEndPoints)
+}
+
+
+# Returns a data frame of cumulative log returns
+getCumulativeLogReturns <- function(dfReturns) {
+    dfCumReturns <- dfReturns %>%
+        map_if(is_bare_double, function(Z) {cumsum(ifelse(is.na(Z), 0, log(1.0 + Z))) + Z*0}) %>%
+        as_tibble()
+
+    return(dfCumReturns)
+}
+
 # Function to calculate portfolio returns
 getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPercent = 0) {
     xtWeights <- xtWeights %>% na.omit()
@@ -369,6 +393,8 @@ getLatestPerformance <- function(dfReturns, lPastYears=list('ALL'), ishtmlOutput
 
             dfPerf <- table.AnnualizedReturns(dfReturnsAssets, scale=12, Rf=dfReturnsRiskFree)
             dfPerf[c(1,2),] <- dfPerf[c(1,2),] * 100
+            rownames(dfPerf)[3] <- str_replace(row.names(dfPerf)[3], "Annualized ", "")
+
             dfPerf <- rbind(dfPerf, dfMaxDD)
             dfPerf <- format(round(dfPerf, digits = 2), justify = 'right', nsmall = 2, scientific = F)
             dfPerf[1,] <- paste0(dfPerf[1,], "%")

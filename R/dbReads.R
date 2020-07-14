@@ -22,7 +22,7 @@ dbReadBenchmarksData <- function(vBenchmarks, tableName = "BenchmarksData", remo
     odbcClose(dbhandle)
 
     if(nrow(df) > 0) {
-        df <- df %>% as_tibble() %>%
+        df <- df %>%
             tidyr::spread(SecurityID, MonthlyReturn) %>%
             mutate(MonthlyDate = as.Date(as.character(MonthlyDate))) %>%
             dplyr::rename(Date = MonthlyDate) %>%
@@ -45,7 +45,7 @@ dbReadEquitiesData <- function(vEquities, tableName = "EquitiesData", removeNAs 
     odbcClose(dbhandle)
 
     if(nrow(df) > 0) {
-        df <- df %>% as_tibble() %>%
+        df <- df %>%
             tidyr::spread(SecurityID, DailyReturn) %>%
             mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
             dplyr::rename(Date = DailyDate) %>%
@@ -86,7 +86,7 @@ dbReadIndexRawData <- function(vSecurities, tableName = "IndexRawData", removeNA
     odbcClose(dbhandle)
 
     if(nrow(df) > 0) {
-        df <- df %>% as_tibble() %>%
+        df <- df %>%
             tidyr::spread(SecurityID, IndexValue) %>%
             mutate(IndexDate = as.Date(as.character(IndexDate))) %>%
             dplyr::rename(Date = IndexDate) %>%
@@ -108,7 +108,7 @@ dbReadFuturesData <- function(secID, tableName = "FuturesData", removeNAs = T) {
     odbcClose(dbhandle)
 
     if(nrow(df) > 0) {
-        df <- df %>% as_tibble() %>%
+        df <- df %>%
             mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
             rename(Date = DailyDate)
     }
@@ -138,7 +138,6 @@ dbReadFXRatesData <- function(vSecurities, tableName = "FXRatesData") {
 
     if(nrow(df) > 0) {
         df <- df %>%
-            as_tibble() %>%
             tidyr::spread(SecurityID, DailyFXRate) %>%
             drop_na() %>%
             mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
@@ -161,7 +160,6 @@ dbReadRiskFreeRatesData <- function(vSecurities, tableName = "RiskFreeRatesData"
 
     if(nrow(df) > 0) {
         df <- df %>%
-            as_tibble() %>%
             tidyr::spread(SecurityID, DailyReturn) %>%
             drop_na() %>%
             mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
@@ -211,13 +209,12 @@ dbReadPortfolioReturns <- function(dfStrategies) {
                 getMonthlyReturns(.)
 
             if(is.null(dfMonthly)) dfMonthly <- df
-            else dfMonthly <- plyr::join(dfMonthly, df, by = "Date", type = "inner")
+            else dfMonthly <- dfMonthly %>% inner_join(df, by = "Date")
         }
     }
 
     odbcClose(dbhandle)
 
-    if(nrow(dfMonthly) > 0) colnames(dfMonthly)[1] <- "Date"
     return(dfMonthly)
 }
 
@@ -246,7 +243,8 @@ dbReadPortfolioWeights <- function(vStrategyParam, longOrShortSignal = c("LONG",
     else queryString <- paste(queryString, "AND Signal <= 0")
 
     dfWeights <- sqlQuery(dbhandle, queryString, stringsAsFactors = F)
-    colnames(dfWeights) <- c("Date", "Security", "Weight")
+    dfWeights <- dfWeights %>%
+        set_names(c("Date", "Security", "Weight"))
 
     odbcClose(dbhandle)
     return(dfWeights)
@@ -278,15 +276,14 @@ dbReadStrategiesReturns <- function(dfStrategies, removeNAs = T) {
                 getMonthlyReturns(.)
 
             if(is.null(dfMonthly)) dfMonthly <- df
-            else dfMonthly <- plyr::join(dfMonthly, df, by = "Date", type = "full")
+            else dfMonthly <- dfMonthly %>% full_join(df, by = "Date")
         }
     }
 
     odbcClose(dbhandle)
 
     if(nrow(dfMonthly) > 0) {
-        colnames(dfMonthly)[1] <- "Date"
-        dfMonthly <- dfMonthly %>% as_tibble() %>% arrange(Date)
+        dfMonthly <- dfMonthly %>% arrange(Date)
         if(removeNAs) dfMonthly <- dfMonthly %>% drop_na()
     }
     return(dfMonthly)
