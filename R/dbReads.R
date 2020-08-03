@@ -170,93 +170,13 @@ dbReadRiskFreeRatesData <- function(vSecurities, tableName = "RiskFreeRatesData"
 }
 
 
-# Read Portfolio Returns
-
-dbReadPortfolioReturns <- function(dfStrategies) {
-    vPrimaryKeyHeaders <- c("StrategyID", "UniverseID", "ParamCombID", "RebalanceFreq", "WeightMethod", "LevLong", "LevShort")
-    colnames(dfStrategies) <- vPrimaryKeyHeaders
-
-    connectionString <- getDatabaseConnectionString()
-    dbhandle <- odbcDriverConnect(connectionString)
-
-    dfMonthly <- NULL
-    for(i in 1:nrow(dfStrategies)) {
-        strategyID <- dfStrategies$StrategyID[i]
-        univID <- dfStrategies$UniverseID[i]
-        paramID <- dfStrategies$ParamCombID[i]
-        rebalFreq <- dfStrategies$RebalanceFreq[i]
-        wgtMethod <- dfStrategies$WeightMethod[i]
-        levLongString <- dfStrategies$LevLong[i]
-        levShortString <- dfStrategies$LevShort[i]
-
-        secReturnsID <- paste(univID, paramID, wgtMethod, paste(levLongString, levShortString, sep = "_"), sep = ".")
-
-        queryString <- paste0("SELECT PortfolioDate, SecurityReturn FROM StrategiesPortfolioData WHERE UPPER(StrategyID) = '",
-                              toupper(strategyID),
-                              "' AND UPPER(UniverseID) = '", toupper(univID),
-                              "' AND UPPER(ParamCombID) = '", toupper(paramID),
-                              "' AND UPPER(RebalanceFreq) = '", toupper(rebalFreq),
-                              "' AND UPPER(WeightMethod) = '", toupper(wgtMethod),
-                              "' AND UPPER(LevLong) = '", toupper(levLongString),
-                              "' AND UPPER(LevShort) = '", toupper(levShortString),
-                              "' AND UPPER(SecurityID) = 'PORTFOLIO'")
-
-        df <- sqlQuery(dbhandle, queryString, stringsAsFactors = F)
-
-        if(nrow(df) > 0) {
-            df <- df %>%
-                set_names(c("Date", secReturnsID)) %>%
-                getMonthlyReturns(.)
-
-            if(is.null(dfMonthly)) dfMonthly <- df
-            else dfMonthly <- dfMonthly %>% inner_join(df, by = "Date")
-        }
-    }
-
-    odbcClose(dbhandle)
-
-    return(dfMonthly)
-}
-
-
-# Read Portfolio Weights
-dbReadPortfolioWeights <- function(vStrategyParam, longOrShortSignal = c("LONG","SHORT")) {
-    vPrimaryKeyHeaders <- c("StrategyID", "UniverseID", "ParamCombID", "RebalanceFreq", "WeightMethod")
-    names(vStrategyParam) <- vPrimaryKeyHeaders
-
-    connectionString <- getDatabaseConnectionString()
-    dbhandle <- odbcDriverConnect(connectionString)
-
-    strategyID <- vStrategyParam["StrategyID"]
-    univID <- vStrategyParam["UniverseID"]
-    paramID <- vStrategyParam["ParamCombID"]
-    rebalFreq <- vStrategyParam["RebalanceFreq"]
-    wgtMethod <- vStrategyParam["WeightMethod"]
-
-    queryString <- paste0("SELECT RebalanceDate, SecurityID, Weight FROM StrategiesRebalanceData WHERE UPPER(StrategyID) = '", toupper(strategyID),
-                          "' AND UPPER(UniverseID) = '", toupper(univID),
-                          "' AND UPPER(ParamCombID) = '", toupper(paramID),
-                          "' AND UPPER(RebalanceFreq) = '", toupper(rebalFreq),
-                          "' AND UPPER(WeightMethod) = '", toupper(wgtMethod),
-                          "'")
-    if(longOrShortSignal[1]=="LONG") queryString <- paste(queryString, "AND Signal >= 0")
-    else queryString <- paste(queryString, "AND Signal <= 0")
-
-    dfWeights <- sqlQuery(dbhandle, queryString, stringsAsFactors = F)
-    dfWeights <- dfWeights %>%
-        set_names(c("Date", "Security", "Weight"))
-
-    odbcClose(dbhandle)
-    return(dfWeights)
-}
-
 
 # Read Strategies Returns
-dbReadStrategiesReturns <- function(dfStrategies, removeNAs = T) {
+dbReadStrategiesReturns <- function(dfStrategies, removeNAs = T, monthlyReturns = T) {
     connectionString <- getDatabaseConnectionString()
     dbhandle <- odbcDriverConnect(connectionString)
 
-    dfMonthly <- NULL
+    dfReturns <- NULL
     for(i in 1:nrow(dfStrategies)) {
         strategyID <- dfStrategies$StrategyID[i]
         univID <- dfStrategies$UniverseID[i]
@@ -271,22 +191,21 @@ dbReadStrategiesReturns <- function(dfStrategies, removeNAs = T) {
         df <- sqlQuery(dbhandle, queryString, stringsAsFactors = F)
 
         if(nrow(df) > 0) {
-            df <- df %>%
-                set_names(c("Date", identifier)) %>%
-                getMonthlyReturns(.)
+            df <- df %>% set_names(c("Date", identifier))
 
-            if(is.null(dfMonthly)) dfMonthly <- df
-            else dfMonthly <- dfMonthly %>% full_join(df, by = "Date")
+            if(is.null(dfReturns)) dfReturns <- df
+            else dfReturns <- dfReturns %>% full_join(df, by = "Date")
         }
     }
 
     odbcClose(dbhandle)
 
-    if(nrow(dfMonthly) > 0) {
-        dfMonthly <- dfMonthly %>% arrange(Date)
-        if(removeNAs) dfMonthly <- dfMonthly %>% drop_na()
+    if(nrow(dfReturns) > 0) {
+        dfReturns <- dfReturns %>% arrange(Date)
+        if(monthlyReturns) dfReturns <- dfReturns %>% getMonthlyReturns(.)
+        if(removeNAs) dfReturns <- dfReturns %>% drop_na()
     }
-    return(dfMonthly)
+    return(dfReturns %>% as_tibble())
 }
 
 
@@ -298,7 +217,6 @@ dbReadStrategiesWeights <- function(dfStrategies) {
     connectionString <- getDatabaseConnectionString()
     dbhandle <- odbcDriverConnect(connectionString)
 
-    dfMonthly <- NULL
     for(i in 1:nrow(dfStrategies)) {
         strategyID <- dfStrategies$StrategyID[i]
         univID <- dfStrategies$UniverseID[i]
@@ -318,5 +236,5 @@ dbReadStrategiesWeights <- function(dfStrategies) {
     }
 
     odbcClose(dbhandle)
-    return(df)
+    return(df %>% as_tibble())
 }
