@@ -205,7 +205,7 @@ dbReadStrategiesReturns <- function(dfStrategies, removeNAs = T, monthlyReturns 
         if(monthlyReturns) dfReturns <- dfReturns %>% getMonthlyReturns(.)
         if(removeNAs) dfReturns <- dfReturns %>% drop_na()
     }
-    return(dfReturns %>% as_tibble())
+    return(dfReturns)
 }
 
 
@@ -236,5 +236,5 @@ dbReadStrategiesWeights <- function(dfStrategies) {
     }
 
     odbcClose(dbhandle)
-    return(df %>% as_tibble())
+    return(df)
 }
