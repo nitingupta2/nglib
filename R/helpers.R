@@ -223,6 +223,7 @@ getCumulativeLogReturns <- function(dfReturns) {
 
 # Function to calculate portfolio returns
 getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPercent) {
+    vSymbols <- colnames(xtReturns)
     xtWeights <- xtWeights %>% na.omit()
 
     # calculate monthly turn over
@@ -230,7 +231,7 @@ getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPe
     beginWeights <- lPortfolio$BOP.Weight
     endWeights <- lPortfolio$EOP.Weight
     xtTransactions <- beginWeights - lag.xts(endWeights)
-    xtTurnOver <- xts(rowSums(abs(xtTransactions[,1:length(symbols)])), order.by=index(xtTransactions))
+    xtTurnOver <- xts(rowSums(abs(xtTransactions[,1:length(vSymbols)])), order.by=index(xtTransactions))
 
     # calculate transaction costs
     xtTransCosts <- xtTurnOver * transCostPercent/100
