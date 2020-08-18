@@ -223,7 +223,10 @@ getCumulativeLogReturns <- function(dfReturns) {
 
 # Function to calculate portfolio returns
 getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPercent) {
-    vSymbols <- colnames(xtReturns)
+
+    vRiskFreeRates <- c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR","TBILLS","TBILL_3M","Cash","CASH")
+    vSymbols <- setdiff(colnames(xtReturns), vRiskFreeRates)
+
     xtWeights <- xtWeights %>% na.omit()
 
     # calculate monthly turn over
@@ -231,7 +234,7 @@ getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPe
     beginWeights <- lPortfolio$BOP.Weight
     endWeights <- lPortfolio$EOP.Weight
     xtTransactions <- beginWeights - lag.xts(endWeights)
-    xtTurnOver <- xts(rowSums(abs(xtTransactions[,1:length(vSymbols)])), order.by=index(xtTransactions))
+    xtTurnOver <- xts(rowSums(abs(xtTransactions[,vSymbols])), order.by=index(xtTransactions))
 
     # calculate transaction costs
     xtTransCosts <- xtTurnOver * transCostPercent/100
@@ -243,6 +246,29 @@ getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPe
 
     return(dfPortfolio)
 }
+
+# # Function to calculate portfolio returns
+# getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPercent) {
+#     vSymbols <- colnames(xtReturns)
+#     xtWeights <- xtWeights %>% na.omit()
+#
+#     # calculate monthly turn over
+#     lPortfolio <- Return.portfolio(R = xtReturns, weights = xtWeights, verbose = TRUE)
+#     beginWeights <- lPortfolio$BOP.Weight
+#     endWeights <- lPortfolio$EOP.Weight
+#     xtTransactions <- beginWeights - lag.xts(endWeights)
+#     xtTurnOver <- xts(rowSums(abs(xtTransactions[,1:length(vSymbols)])), order.by=index(xtTransactions))
+#
+#     # calculate transaction costs
+#     xtTransCosts <- xtTurnOver * transCostPercent/100
+#     xtReturnsWithTC <- lPortfolio$returns - xtTransCosts
+#
+#     dfPortfolio <- xtReturnsWithTC %>% tk_tbl(preserve_index = T) %>%
+#         set_names(c("Date", portfolioName)) %>%
+#         mutate(Date = as.Date(Date))
+#
+#     return(dfPortfolio)
+# }
 
 
 # Rolling Annualized Returns
@@ -359,7 +385,7 @@ getLatestPerformance <- function(dfReturns, lPastYears=list('ALL'), ishtmlOutput
     dfReturns <- dfReturns %>% data.frame(row.names = 1) %>% na.omit()
 
     hasRiskFreeReturns <- FALSE
-    vRiskFreeRates <- c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR","TBILLS","TBILL_3M","Cash")
+    vRiskFreeRates <- c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR","TBILLS","TBILL_3M","Cash","CASH")
     if(colnames(dfReturns)[1] %in% vRiskFreeRates) hasRiskFreeReturns <- TRUE
 
     firstDate <- as.Date(first(rownames(dfReturns))) ; lastDate <- as.Date(last(rownames(dfReturns)))
