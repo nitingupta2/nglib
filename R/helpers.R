@@ -224,7 +224,7 @@ getCumulativeLogReturns <- function(dfReturns) {
 # Function to calculate portfolio returns
 getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPercent) {
 
-    vRiskFreeRates <- c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR","TBILLS","TBILL_3M","Cash","CASH")
+    vRiskFreeRates <- getRiskFreeRatesSymbols()
     vSymbols <- setdiff(colnames(xtReturns), vRiskFreeRates)
 
     xtWeights <- xtWeights %>% na.omit()
@@ -385,7 +385,7 @@ getLatestPerformance <- function(dfReturns, lPastYears=list('ALL'), ishtmlOutput
     dfReturns <- dfReturns %>% data.frame(row.names = 1) %>% na.omit()
 
     hasRiskFreeReturns <- FALSE
-    vRiskFreeRates <- c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR","TBILLS","TBILL_3M","Cash","CASH")
+    vRiskFreeRates <- getRiskFreeRatesSymbols()
     if(colnames(dfReturns)[1] %in% vRiskFreeRates) hasRiskFreeReturns <- TRUE
 
     firstDate <- as.Date(first(rownames(dfReturns))) ; lastDate <- as.Date(last(rownames(dfReturns)))
@@ -486,6 +486,11 @@ getDateBreaks <- function(vDates) {
     return(dateBreaks)
 }
 
+
+# get Risk Free Symbols
+getRiskFreeRatesSymbols <- function() {
+    return(c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR","TBILLS","TBills","Tbills","TBILL_3M","Cash","CASH"))
+}
 
 # get Futures Symbols
 getFuturesSymbols <- function() {
