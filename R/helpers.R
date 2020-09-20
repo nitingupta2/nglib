@@ -197,21 +197,6 @@ getCalendarReturns <- function(dfReturns) {
 }
 
 
-# Returns a numeric vector of indices matching the rebalance dates
-getRebalanceEndPoints <- function(xtReturns, rebalanceFrequency = "months", rebalanceOffsetDays = 0) {
-
-    vEndPoints <- xts::endpoints(xtReturns, on = rebalanceFrequency)
-
-    last_value <- dplyr::last(vEndPoints)
-
-    vEndPoints <- vEndPoints + rebalanceOffsetDays
-    vEndPoints[vEndPoints < 1] <- 1
-    vEndPoints[vEndPoints > last_value] <- last_value
-    vEndPoints <- unique(vEndPoints)
-    return(vEndPoints)
-}
-
-
 # Returns a data frame of cumulative log returns
 getCumulativeLogReturns <- function(dfReturns) {
     dfCumReturns <- dfReturns %>%
@@ -220,56 +205,6 @@ getCumulativeLogReturns <- function(dfReturns) {
 
     return(dfCumReturns)
 }
-
-# Function to calculate portfolio returns
-getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPercent) {
-
-    vRiskFreeRates <- getRiskFreeRatesSymbols()
-    vSymbols <- setdiff(colnames(xtReturns), vRiskFreeRates)
-
-    xtWeights <- xtWeights %>% na.omit()
-
-    # calculate monthly turn over
-    lPortfolio <- Return.portfolio(R = xtReturns, weights = xtWeights, verbose = TRUE)
-    beginWeights <- lPortfolio$BOP.Weight
-    endWeights <- lPortfolio$EOP.Weight
-    xtTransactions <- beginWeights - lag.xts(endWeights)
-    xtTurnOver <- xts(rowSums(abs(xtTransactions[,vSymbols])), order.by=index(xtTransactions))
-
-    # calculate transaction costs
-    xtTransCosts <- xtTurnOver * transCostPercent/100
-    xtReturnsWithTC <- lPortfolio$returns - xtTransCosts
-
-    dfPortfolio <- xtReturnsWithTC %>% tk_tbl(preserve_index = T) %>%
-        set_names(c("Date", portfolioName)) %>%
-        mutate(Date = as.Date(Date))
-
-    return(dfPortfolio)
-}
-
-# # Function to calculate portfolio returns
-# getPortfolioReturns <- function(xtReturns, xtWeights, portfolioName, transCostPercent) {
-#     vSymbols <- colnames(xtReturns)
-#     xtWeights <- xtWeights %>% na.omit()
-#
-#     # calculate monthly turn over
-#     lPortfolio <- Return.portfolio(R = xtReturns, weights = xtWeights, verbose = TRUE)
-#     beginWeights <- lPortfolio$BOP.Weight
-#     endWeights <- lPortfolio$EOP.Weight
-#     xtTransactions <- beginWeights - lag.xts(endWeights)
-#     xtTurnOver <- xts(rowSums(abs(xtTransactions[,1:length(vSymbols)])), order.by=index(xtTransactions))
-#
-#     # calculate transaction costs
-#     xtTransCosts <- xtTurnOver * transCostPercent/100
-#     xtReturnsWithTC <- lPortfolio$returns - xtTransCosts
-#
-#     dfPortfolio <- xtReturnsWithTC %>% tk_tbl(preserve_index = T) %>%
-#         set_names(c("Date", portfolioName)) %>%
-#         mutate(Date = as.Date(Date))
-#
-#     return(dfPortfolio)
-# }
-
 
 # Rolling Annualized Returns
 # dfReturns: Date, TBILLS.MonthlyReturns, Stock.MonthlyReturns, SP500TR.MonthlyReturns
