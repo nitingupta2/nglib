@@ -1,31 +1,31 @@
 EPSILON <- 1e-16
 
 
-annualizedReturns <- function(Z) {
+annualizedReturns <- function(Z, series_scale = 12) {
     Z <- na.omit(Z)
-    numMonths <- length(Z)
-    if(numMonths > 0) {
+    numPeriods <- length(Z)
+    if(numPeriods > 0) {
         cumReturn <- cumprod(1.0 + Z)
-        anlReturn <- (cumReturn[length(cumReturn)])^(12/numMonths) - 1.0
+        anlReturn <- (cumReturn[length(cumReturn)])^(series_scale/numPeriods) - 1.0
         return(anlReturn)
     } else {
         return(NA_real_)
     }
 }
 
-annualizedStandardDeviation <- function(Z) {
+annualizedStandardDeviation <- function(Z, series_scale = 12) {
     Z <- na.omit(Z)
-    numMonths <- length(Z)
-    if(numMonths > 0) {
-        stdev <- sd(Z) * sqrt(12)
+    numPeriods <- length(Z)
+    if(numPeriods > 0) {
+        stdev <- sd(Z) * sqrt(series_scale)
         return(stdev)
     } else {
         return(NA_real_)
     }
 }
 
-annualizedSemiDeviation <- function(Z) {
-    semidev <- SemiDeviation(Z) * sqrt(12)
+annualizedSemiDeviation <- function(Z, series_scale = 12) {
+    semidev <- SemiDeviation(Z) * sqrt(series_scale)
     return(semidev)
 }
 
