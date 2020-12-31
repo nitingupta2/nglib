@@ -259,15 +259,17 @@ reorderCorrelationMatrix <- function(mCor) {
     return(mCor)
 }
 
-# Returns correlations of monthly returns of a given strategy with other strategies, in the time frames
-getCorrelations <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
+# Returns correlations of monthly returns of a given strategy with other strategies, in the given time frames
+getCorrelationsVerbose <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
     firstDate <- as.Date(first(dfReturns$Date)) ; lastDate <- as.Date(last(dfReturns$Date))
     firstYearMonth <- paste(lubridate::month(firstDate, label=T, abbr=T),lubridate::year(firstDate))
     lastYearMonth <- paste(lubridate::month(lastDate, label=T, abbr=T),lubridate::year(lastDate))
-
-    strategyColIndex <- which(colnames(dfReturns)==strategyName) - 1
-    dfCor <- data.frame()
     numberOfMonths = nrow(dfReturns)
+
+    strategyColIndex <- which(colnames(dfReturns)==strategyName)
+    lCor <- list()
+    lCorNames <- list()
+    i <- 0
     for(yrs in lPastYears) {
         if(yrs=='ALL') mths = numberOfMonths else mths = yrs*12
         dfReturnsPast <- tail(dfReturns, n=mths)
@@ -278,14 +280,28 @@ getCorrelations <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
                                   paste(firstYearMonth,"-",lastYearMonth),
                                   paste(firstYearMonthPast,"-",lastYearMonth))
 
-        mCor <- cor(dfReturnsPast[-1])
-        dfCorTemp <-  as.data.frame(mCor[strategyColIndex, -strategyColIndex])
-        colnames(dfCorTemp) <- colnames_prefix
-        rownames(dfCorTemp) <- colnames(dfReturnsPast[-1])[-strategyColIndex]
-        if(ncol(dfCor)==0) {dfCor <- dfCorTemp}
-        else {dfCor <- cbind(dfCor, dfCorTemp)}
+        lCorPast <- map(dfReturnsPast %>% select(-all_of(c(1, strategyColIndex))), cor.test, y = dfReturnsPast[[strategyColIndex]])
+        i <- i + 1
+        lCor[[i]] <- lCorPast
+        lCorNames[[i]] <- colnames_prefix
     }
-    return(t(dfCor))
+    names(lCor) <- lCorNames
+    return(lCor)
+}
+
+# Returns a data frame of correlation estimates only within each time frame
+getCorrelations <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
+    vSymbols <- colnames(dfReturns[-1])
+    lCor <- getCorrelationsVerbose(dfReturns, lPastYears, strategyName)
+    dfCor <- map(lCor, ~ .x %>% map_dfr(broom::tidy, .id = "predictor")) %>%
+        bind_rows(.id = "time_frame") %>%
+        select(time_frame, predictor, estimate) %>%
+        spread(predictor, estimate) %>%
+        select(time_frame, any_of(vSymbols)) %>%
+        select(-any_of(getRiskFreeRatesSymbols())) %>%
+        data.frame(row.names = 1)
+
+    return(dfCor)
 }
 
 
