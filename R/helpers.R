@@ -272,6 +272,7 @@ getCorrelationsVerbose <- function(dfReturns, lPastYears=list('ALL'), strategyNa
     i <- 0
     for(yrs in lPastYears) {
         if(yrs=='ALL') mths = numberOfMonths else mths = yrs*12
+        if(mths > numberOfMonths) next
         dfReturnsPast <- tail(dfReturns, n=mths)
         firstDatePast <- as.Date(first(dfReturnsPast$Date))
         firstYearMonthPast <- paste(lubridate::month(firstDatePast, label=T, abbr=T), lubridate::year(firstDatePast))
