@@ -287,15 +287,17 @@ getCorrelationsVerbose <- function(dfReturns, lPastYears=list('ALL'), strategyNa
         lCorNames[[i]] <- colnames_prefix
     }
     names(lCor) <- lCorNames
-    return(lCor)
+
+    dfCor <- map(lCor, ~ .x %>% map_dfr(broom::tidy, .id = "predictor")) %>%
+        bind_rows(.id = "time_frame") %>%
+
+    return(dfCor)
 }
 
 # Returns a data frame of correlation estimates only within each time frame
 getCorrelations <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
     vSymbols <- colnames(dfReturns[-1])
-    lCor <- getCorrelationsVerbose(dfReturns, lPastYears, strategyName)
-    dfCor <- map(lCor, ~ .x %>% map_dfr(broom::tidy, .id = "predictor")) %>%
-        bind_rows(.id = "time_frame") %>%
+    dfCor <- getCorrelationsVerbose(dfReturns, lPastYears, strategyName) %>%
         select(time_frame, predictor, estimate) %>%
         spread(predictor, estimate) %>%
         select(time_frame, any_of(vSymbols)) %>%
