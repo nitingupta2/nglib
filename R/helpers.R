@@ -299,7 +299,6 @@ getCorrelations <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
         select(time_frame, predictor, estimate) %>%
         spread(predictor, estimate) %>%
         select(time_frame, any_of(vSymbols)) %>%
-        select(-any_of(getRiskFreeRatesSymbols())) %>%
         data.frame(row.names = 1)
 
     return(dfCor)
