@@ -290,6 +290,7 @@ getCorrelationsVerbose <- function(dfReturns, lPastYears=list('ALL'), strategyNa
 
     dfCor <- map(lCor, ~ .x %>% map_dfr(broom::tidy, .id = "predictor")) %>%
         bind_rows(.id = "time_frame") %>%
+        mutate(time_frame = fct_inorder(time_frame))
 
     return(dfCor)
 }
