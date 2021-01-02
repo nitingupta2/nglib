@@ -106,6 +106,31 @@ plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily
 }
 
 
+# Plot Correlations with confidence intervals in given time frames
+plotCorrelationConfidenceIntervals_hc <- function(dfCor, titleText = "Correlations with confidence intervals") {
+
+    vTimeFrames <- unique(dfCor$time_frame)
+    vColors <- getPlotColors(palette = "main", n = length(vTimeFrames))
+
+    point_tooltip_format <- paste0('<span style="color: {series.color}; font-weight:bold; text-align: right">{series.name} </span>',
+                                   '<b>: {point.y}</b><br>')
+    errorbar_tooltip_format <- paste0('<span style="color: {series.color}; font-weight:bold; text-align: right">{series.name} </span>',
+                                      '<b>: {point.low} - {point.high}</b><br>')
+
+    highchart() %>%
+        hc_add_series(dfCor, type = "point", hcaes(x = predictor, y = estimate, group = time_frame),
+                      color = vColors, tooltip = list(pointFormat = point_tooltip_format)) %>%
+        hc_add_series(dfCor, type = "errorbar", hcaes(x = predictor, low = conf.low, high = conf.high, group = time_frame),
+                      color = vColors, tooltip = list(pointFormat = errorbar_tooltip_format)) %>%
+        hc_plotOptions(errorbar = list(pointWidth = 15)) %>%
+        hc_xAxis(type = "categorical", categories = dfCor$predictor) %>%
+        hc_yAxis(title = list(text = "Correlation")) %>%
+        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, crosshairs = TRUE, valueDecimals = 2, headerFormat = "{point.key}<br>") %>%
+        hc_chart(inverted = TRUE) %>%
+        hc_title(text = titleText)
+}
+
+
 # Plot interactive Rolling Excess Returns
 plotRollingExcessReturns_hc <- function(dfReturns, dfRecessions=NULL, coreStrategyName, baseBenchmarkName, rollingMonths) {
     dfExcessReturns <- getRollingAnnualizedReturns(dfReturns, rollingMonths) %>%
