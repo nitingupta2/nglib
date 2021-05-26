@@ -136,7 +136,6 @@ plotRollingExcessReturns_hc <- function(dfReturns, dfRecessions=NULL, coreStrate
     dfExcessReturns <- getRollingAnnualizedReturns(dfReturns, rollingMonths) %>%
         mutate(ExcessReturn = !!sym(coreStrategyName) - !!sym(baseBenchmarkName),
                ExcessReturn = ExcessReturn * 100)
-    xtExcessReturn <- dfExcessReturns %>% select(Date, ExcessReturn) %>% timetk::tk_xts(date_var = Date, silent = T)
 
     # determine title text
     plotTitle <- glue::glue("Rolling Annualized Excess {rollingMonths} Months Returns Over {baseBenchmarkName}")
