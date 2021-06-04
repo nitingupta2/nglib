@@ -76,7 +76,7 @@ dbReadEquitiesUniverse <- function(strategyID, univID) {
 
 
 # Read IndexRawData
-dbReadIndexRawData <- function(vSecurities, tableName = "IndexRawData", removeNAs = T) {
+dbReadIndexRawData <- function(vSecurities, tableName = "IndexRawData") {
     securitiesString <- paste(vSecurities, collapse = "','")
     queryString <- glue::glue("SELECT * FROM {tableName} WHERE SecurityID IN ('{securitiesString}')")
 
@@ -88,15 +88,35 @@ dbReadIndexRawData <- function(vSecurities, tableName = "IndexRawData", removeNA
     if(nrow(df) > 0) {
         df <- df %>%
             tidyr::spread(SecurityID, IndexValue) %>%
-            mutate(IndexDate = as.Date(as.character(IndexDate))) %>%
-            dplyr::rename(Date = IndexDate) %>%
-            select(one_of(c("Date", vSecurities)))
+            mutate(Date = as.Date(as.character(IndexDate))) %>%
+            select(one_of(c("Date", vSecurities))) %>%
+            filter(!(if_all(all_of(vSecurities), ~ is.na(.x)))) %>%
+            as_tibble()
     }
-
-    if(removeNAs) df <- df %>% drop_na()
     return(df)
 }
 
+# Convert IndexRawData to returns
+dbReadIndexReturns <- function(vSecurities, tableName = "IndexRawData", startDate = "1920-01-01", endDate = "2100-01-01") {
+    df <- dbReadIndexRawData(vSecurities, tableName = "IndexRawData")
+
+    if(nrow(df) > 0) {
+        df <- df %>%
+            filter(Date >= startDate & Date <= endDate) %>%
+            tidyr::gather(SecurityID, IndexValue, -Date) %>%
+            drop_na(IndexValue) %>%
+            group_by(SecurityID) %>%
+            arrange(Date) %>%
+            tq_mutate(select = IndexValue, mutate_fun = Delt, col_rename = "Return") %>%
+            select(-IndexValue) %>%
+            tidyr::spread(SecurityID, Return) %>%
+            select(one_of(c("Date", vSecurities))) %>%
+            filter(!(if_all(all_of(vSecurities), ~ is.na(.x)))) %>%
+            as_tibble()
+    }
+
+    return(df)
+}
 
 # Read Futures Data
 dbReadFuturesData <- function(secID, tableName = "FuturesData", removeNAs = T) {
@@ -110,7 +130,9 @@ dbReadFuturesData <- function(secID, tableName = "FuturesData", removeNAs = T) {
     if(nrow(df) > 0) {
         df <- df %>%
             mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
-            rename(Date = DailyDate)
+            rename(Date = DailyDate) %>%
+            arrange(Date) %>%
+            as_tibble()
     }
 
     if(removeNAs) df <- df %>% drop_na()
@@ -140,9 +162,10 @@ dbReadFXRatesData <- function(vSecurities, tableName = "FXRatesData") {
         df <- df %>%
             tidyr::spread(SecurityID, DailyFXRate) %>%
             drop_na() %>%
-            mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
-            rename(Date = DailyDate) %>%
-            select(one_of(c("Date", vSecurities)))
+            mutate(Date = as.Date(as.character(DailyDate))) %>%
+            select(one_of(c("Date", vSecurities))) %>%
+            arrange(Date) %>%
+            as_tibble()
     }
     return(df)
 }
@@ -162,9 +185,10 @@ dbReadRiskFreeRatesData <- function(vSecurities, tableName = "RiskFreeRatesData"
         df <- df %>%
             tidyr::spread(SecurityID, DailyReturn) %>%
             drop_na() %>%
-            mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
-            rename(Date = DailyDate) %>%
-            select(one_of(c("Date", vSecurities)))
+            mutate(Date = as.Date(as.character(DailyDate))) %>%
+            select(one_of(c("Date", vSecurities))) %>%
+            arrange(Date) %>%
+            as_tibble()
     }
     return(df)
 }
@@ -194,7 +218,7 @@ dbReadStrategiesReturns <- function(dfStrategies, removeNAs = T, monthlyReturns 
             df <- df %>% set_names(c("Date", identifier))
 
             if(is.null(dfReturns)) dfReturns <- df
-            else dfReturns <- dfReturns %>% full_join(df, by = "Date")
+            else dfReturns <- dfReturns %>% full_join(df, by = "Date") %>% arrange(Date)
         }
     }
 
@@ -202,8 +226,12 @@ dbReadStrategiesReturns <- function(dfStrategies, removeNAs = T, monthlyReturns 
 
     if(nrow(dfReturns) > 0) {
         dfReturns <- dfReturns %>% arrange(Date)
-        if(monthlyReturns) dfReturns <- dfReturns %>% getMonthlyReturns(.)
-        if(removeNAs) dfReturns <- dfReturns %>% drop_na()
+        if(monthlyReturns) {
+            dfReturns <- dfReturns %>% getMonthlyReturns(.)
+            if(removeNAs) dfReturns <- dfReturns %>% drop_na()
+        } else {
+            dfReturns <- dfReturns %>% filter(!(if_all(where(is_bare_double), ~ is.na(.x)))) # remove rows where all values except Date are NAs
+        }
     }
     return(dfReturns)
 }
