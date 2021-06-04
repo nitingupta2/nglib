@@ -239,7 +239,10 @@ getRollingAnnualizedReturns <- function(dfReturns, rollingMonths) {
 # PRE: dfReturns has monthly returns
 # POST: Returns a data frame <date_from, date_to> of the recession intervals during this time series
 getRecessionIntervals <- function(dfReturns, dfRecessions) {
-    dfRecessions <- dfReturns %>% left_join(dfRecessions, by = "Date") %>%
+    dfRecessions <- dfReturns %>%
+        full_join(dfRecessions, by = "Date") %>%
+        filter(Date >= min(dfReturns$Date) & Date <= max(dfReturns$Date)) %>%
+        arrange(Date) %>%
         mutate(Recession = na.locf(Recession, na.rm = F)) %>%
         replace_na(list(Recession = 0)) %>%
         select(Date, Recession)

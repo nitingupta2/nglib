@@ -24,8 +24,8 @@ dbReadBenchmarksData <- function(vBenchmarks, tableName = "BenchmarksData", remo
     if(nrow(df) > 0) {
         df <- df %>%
             tidyr::spread(SecurityID, MonthlyReturn) %>%
-            mutate(MonthlyDate = as.Date(as.character(MonthlyDate))) %>%
-            dplyr::rename(Date = MonthlyDate) %>%
+            mutate(Date = as.Date(as.character(MonthlyDate))) %>%
+            arrange(Date) %>%
             select(one_of(c("Date", vBenchmarks)))
     }
 
@@ -47,8 +47,8 @@ dbReadEquitiesData <- function(vEquities, tableName = "EquitiesData", removeNAs 
     if(nrow(df) > 0) {
         df <- df %>%
             tidyr::spread(SecurityID, DailyReturn) %>%
-            mutate(DailyDate = as.Date(as.character(DailyDate))) %>%
-            dplyr::rename(Date = DailyDate) %>%
+            mutate(Date = as.Date(as.character(DailyDate))) %>%
+            arrange(Date) %>%
             select(one_of(c("Date", vEquities)))
     }
 
@@ -90,6 +90,7 @@ dbReadIndexRawData <- function(vSecurities, tableName = "IndexRawData") {
             tidyr::spread(SecurityID, IndexValue) %>%
             mutate(Date = as.Date(as.character(IndexDate))) %>%
             select(one_of(c("Date", vSecurities))) %>%
+            arrange(Date) %>%
             filter(!(if_all(all_of(vSecurities), ~ is.na(.x)))) %>%
             as_tibble()
     }
@@ -258,8 +259,8 @@ dbReadStrategiesWeights <- function(dfStrategies) {
         df <- sqlQuery(dbhandle, queryString, stringsAsFactors = F)
         if(nrow(df) > 0) {
             df <- df %>%
-                select(RebalanceDate, SecurityID, Weight) %>%
-                dplyr::rename(Date = RebalanceDate)
+                select(Date = RebalanceDate, SecurityID, Weight) %>%
+                arrange(Date)
         }
     }
 
