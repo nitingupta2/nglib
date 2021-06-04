@@ -226,7 +226,7 @@ dbReadStrategiesReturns <- function(dfStrategies, removeNAs = T, monthlyReturns 
     odbcClose(dbhandle)
 
     if(nrow(dfReturns) > 0) {
-        dfReturns <- dfReturns %>% arrange(Date)
+        dfReturns <- dfReturns %>% arrange(Date) %>% mutate(Date = as.Date(Date))
         if(monthlyReturns) {
             dfReturns <- dfReturns %>% getMonthlyReturns(.)
             if(removeNAs) dfReturns <- dfReturns %>% drop_na()
