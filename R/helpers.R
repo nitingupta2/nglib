@@ -362,7 +362,7 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
             firstYearMonthPast <- paste(lubridate::month(firstDatePast, label=T, abbr=T), lubridate::year(firstDatePast))
             firstDailyDatePast <- lubridate::make_date(lubridate::year(firstDatePast), lubridate::month(firstDatePast), 1)
 
-            dfDailyReturnsPast <- dfDailyReturns %>% filter(Date >= firstDailyDatePast)
+            dfDailyReturnsPast <- dfDailyReturns %>% filter(Date >= firstDailyDatePast) %>% data.frame(row.names = 1)
 
             if(hasRiskFreeReturns) {
                 dfDailyReturnsAssets <- subset(dfDailyReturnsPast, select = c(2:numberOfAssets))
