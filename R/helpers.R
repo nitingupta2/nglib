@@ -338,14 +338,15 @@ getDrawdowns <- function(dfReturns, colIndex=NA, colName, top=5) {
 
 #PRE: dfReturns is a data frame of monthly returns
 #POST: prints data frame of performance in each period in lPastYears list
-getLatestPerformance <- function(dfReturns, lPastYears=list('ALL'), ishtmlOutput = FALSE, showReturnsOnly = FALSE) {
-    dfReturns <- dfReturns %>% data.frame(row.names = 1) %>% na.omit()
+getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlOutput = FALSE, showReturnsOnly = FALSE) {
+    dfReturns <- dfDailyReturns %>% getMonthlyReturns() %>% data.frame(row.names = 1) %>% na.omit()
 
     hasRiskFreeReturns <- FALSE
     vRiskFreeRates <- getRiskFreeRatesSymbols()
     if(colnames(dfReturns)[1] %in% vRiskFreeRates) hasRiskFreeReturns <- TRUE
 
-    firstDate <- as.Date(first(rownames(dfReturns))) ; lastDate <- as.Date(last(rownames(dfReturns)))
+    firstDate <- as.Date(first(rownames(dfReturns)))
+    lastDate <- as.Date(last(rownames(dfReturns)))
     firstYearMonth <- paste(lubridate::month(firstDate, label=T, abbr=T),lubridate::year(firstDate))
     lastYearMonth <- paste(lubridate::month(lastDate, label=T, abbr=T),lubridate::year(lastDate))
 
@@ -356,19 +357,25 @@ getLatestPerformance <- function(dfReturns, lPastYears=list('ALL'), ishtmlOutput
         if(yrs=='ALL') mths = numberOfMonths else mths = yrs*12
         if(numberOfMonths >= mths) {
             dfReturnsPast <- tail(dfReturns, n=mths)
+
             firstDatePast <- as.Date(first(rownames(dfReturnsPast)))
             firstYearMonthPast <- paste(lubridate::month(firstDatePast, label=T, abbr=T), lubridate::year(firstDatePast))
+            firstDailyDatePast <- lubridate::make_date(lubridate::year(firstDatePast), lubridate::month(firstDatePast), 1)
+
+            dfDailyReturnsPast <- dfDailyReturns %>% filter(Date >= firstDailyDatePast)
 
             if(hasRiskFreeReturns) {
+                dfDailyReturnsAssets <- subset(dfDailyReturnsPast, select = c(2:numberOfAssets))
                 dfReturnsAssets <- subset(dfReturnsPast, select=c(2:numberOfAssets))
                 dfReturnsRiskFree <- dfReturnsPast[,1,drop=F]
             }
             else {
+                dfDailyReturnsAssets <- dfDailyReturnsPast
                 dfReturnsAssets <- dfReturnsPast
                 dfReturnsRiskFree <- data.frame(vector(mode='numeric', length=nrow(dfReturnsPast)))
                 rownames(dfReturnsRiskFree)=rownames(dfReturnsAssets)
             }
-            dfMaxDD <- maxDrawdown(dfReturnsAssets, invert = F) * 100
+            dfMaxDD <- maxDrawdown(dfDailyReturnsAssets, invert = F) * 100
             if(is.null(dim(dfMaxDD))) {
                 dim(dfMaxDD) <- c(1, 1)
                 colnames(dfMaxDD) <- colnames(dfReturnsAssets)
