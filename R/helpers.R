@@ -30,9 +30,9 @@ annualizedSemiDeviation <- function(Z, series_scale = 12) {
 }
 
 
-getPerformanceMetrics <- function(dfDailyReturns) {
+getPerformanceMetrics <- function(dfDailyReturns, dfMonthlyRiskFreeReturns) {
 
-    dfReturns <- getMonthlyReturns(dfDailyReturns) %>% drop_na()
+    dfReturns <- dfMonthlyRiskFreeReturns %>% inner_join(getMonthlyReturns(dfDailyReturns), by = "Date") %>% drop_na()
 
     firstDate <- first(dfReturns$Date) ; lastDate <- last(dfReturns$Date)
     firstYearMonth <- paste(lubridate::month(firstDate, label=T, abbr=T),lubridate::year(firstDate))
@@ -40,10 +40,7 @@ getPerformanceMetrics <- function(dfDailyReturns) {
     metricsHeading <- paste(firstYearMonth, lastYearMonth, sep = " - ")
 
     df <- dfReturns %>%
-        select(-TBILLS) %>%
-        gather(Symbol, Ra, -Date) %>%
-        select(Symbol, Date, Ra) %>%
-        left_join(dfReturns %>% select(Date, TBILLS), by = "Date") %>%
+        gather(Symbol, Ra, -Date, -TBILLS) %>%
         mutate(Symbol = factor(Symbol, levels = unique(Symbol))) %>%
         mutate(Excess = Ra - TBILLS) %>%
         mutate(Downside = ifelse((Ra + 1e-12) > TBILLS, NA, Ra)) %>%
