@@ -58,6 +58,7 @@ getPerformanceMetrics <- function(dfDailyReturns, dfMonthlyRiskFreeReturns) {
     dfWorstDD <- dfDailyReturns %>%
         dplyr::summarise_if(is_bare_double, ~ suppressWarnings(maxDrawdown(.x, invert = F))) %>%
         gather(Symbol, WorstDD) %>%
+        mutate(Symbol = factor(Symbol, levels = levels(df$Symbol))) %>%
         mutate(WorstDD = WorstDD * 100)
 
     dfMonthwise <- df %>% dplyr::summarise(`Worst Month` = min(Ra),
