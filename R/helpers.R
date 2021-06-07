@@ -30,9 +30,9 @@ annualizedSemiDeviation <- function(Z, series_scale = 12) {
 }
 
 
-getPerformanceMetrics <- function(dfReturns) {
+getPerformanceMetrics <- function(dfDailyReturns) {
 
-    dfReturns <- dfReturns %>% drop_na()
+    dfReturns <- getMonthlyReturns(dfDailyReturns) %>% drop_na()
 
     firstDate <- first(dfReturns$Date) ; lastDate <- last(dfReturns$Date)
     firstYearMonth <- paste(lubridate::month(firstDate, label=T, abbr=T),lubridate::year(firstDate))
@@ -55,8 +55,13 @@ getPerformanceMetrics <- function(dfReturns) {
     dfAnlReturnExcess <- df %>% dplyr::summarise(AnnualizedReturnExcess = annualizedReturns(Excess))
     dfAnlStdev <- df %>% dplyr::summarise(AnnualizedStdDev = annualizedStandardDeviation(Ra))
     dfSemiDev <- df %>% dplyr::summarise(AnnualizedSemidev = annualizedSemiDeviation(Downside))
-    dfWorstDD <- df %>% dplyr::summarise(WorstDD = suppressWarnings(maxDrawdown(Ra, invert = F)))
     dfSkewness <- df %>% dplyr::summarise(Skewness = skewness(Ra))
+
+    # summarise maximum drawdown on daily returns
+    dfWorstDD <- dfDailyReturns %>%
+        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(maxDrawdown(.x, invert = F))) %>%
+        gather(Symbol, WorstDD) %>%
+        mutate(WorstDD = WorstDD * 100)
 
     dfMonthwise <- df %>% dplyr::summarise(`Worst Month` = min(Ra),
                                            `Best Month` = max(Ra),
