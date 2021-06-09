@@ -68,8 +68,8 @@ getPerformanceMetrics <- function(dfDailyReturns, dfMonthlyRiskFreeReturns) {
                      inner_join, by = "Symbol") %>%
         mutate(Sharpe = AnnualizedReturnExcess/AnnualizedStdDev,
                Sortino = AnnualizedReturnExcess/AnnualizedSemidev) %>%
-        select(-AnnualizedReturnExcess, -AnnualizedSemidev, -Sortino) %>%
-        select(Symbol, AnnualizedReturn, AnnualizedStdDev, Sharpe, Skewness, WorstDD, everything())
+        select(-AnnualizedReturnExcess, -AnnualizedSemidev, -Sortino, -Skewness) %>%
+        select(Symbol, AnnualizedReturn, AnnualizedStdDev, Sharpe, WorstDD, everything())
 
     vColNames <- colnames(dfPerf) %>%
         str_replace_all("Annualized", "Annualized ") %>%
