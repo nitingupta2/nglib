@@ -203,7 +203,7 @@ hc_tooltip_sorted_table <- function(hc, ...) {
 }
 
 # Plot interactive Returns chart
-plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withgrey") {
+plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("monthly", "daily", "weekly"), palette_name = "withgrey") {
     # exclude incomplete rows
     dfReturns <- dfReturns %>% drop_na()
     vStrategyNames <- names(dfReturns)[-1]
@@ -236,7 +236,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withg
         hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
         hc_legend(enabled = TRUE) %>%
         hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE,
-                   xDateFormat = "%b %Y",
+                   xDateFormat = ifelse(returnFrequency[1] == "daily", "%b %d, %Y", "%b %Y"),
                    headerFormat = "<center/>{point.key}<br><table>",
                    pointFormat = pointFormatter_perf,
                    footerFormat = "</table>")
