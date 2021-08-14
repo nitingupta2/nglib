@@ -108,7 +108,7 @@ dbReadIndexReturns <- function(vSecurities, tableName = "IndexRawData", startDat
             drop_na(IndexValue) %>%
             group_by(SecurityID) %>%
             arrange(Date) %>%
-            tq_mutate(select = IndexValue, mutate_fun = Delt, col_rename = "Return") %>%
+            mutate(Return = IndexValue/dplyr::lag(IndexValue) - 1) %>%
             select(-IndexValue) %>%
             tidyr::spread(SecurityID, Return) %>%
             select(one_of(c("Date", vSecurities))) %>%
