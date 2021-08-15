@@ -54,12 +54,12 @@ getPerformanceDataTableList <- function(dfDailyReturns, dfMonthlyRiskFreeReturns
 
         dtPerf <- as.data.frame(dfPerf) %>%
             datatable(rownames = FALSE, extensions = 'FixedColumns',
-                      caption = htmltools::tags$caption(style = 'text-align: center;', htmltools::h5(tableCaption)),
-                      options = list(columnDefs = list(list(sorting = c("desc","asc"), targets = "_all")),
+                      caption = htmltools::tags$caption(style = 'caption-side: bottom; text-align: center;', htmltools::h5(tableCaption)),
+                      options = list(columnDefs = list(list(sorting = c("desc","asc"), targets = "_all")), order = list(list(1, "desc")),
                                      bPaginate = FALSE, searching = FALSE, info = FALSE, fixedColumns = list(leftColumns = 1)),
                       class = 'compact hover stripe') %>%
-            formatPercentage(c(2:3, 6:9), 2) %>%
-            formatRound(c(4:5), 2)
+            formatPercentage(c(2:3, 5:7), 2) %>%
+            formatRound(c(4), 2)
 
         perfCtr <- perfCtr + 1
         lPerf[[perfCtr]] <- dtPerf
@@ -100,8 +100,8 @@ getPerformanceMetrics <- function(dfDailyReturns, dfMonthlyRiskFreeReturns) {
         mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
     dfMonthwise <- df %>% dplyr::summarise(`Worst Month` = min(Ra),
-                                           `Best Month` = max(Ra),
-                                           `Profitable Months` = mean((Ra + 1e-12) >= 0.0))
+                                           `Best Month` = max(Ra))
+                                           #`Profitable Months` = mean((Ra + 1e-12) >= 0.0))
 
     dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfSkewness, dfMonthwise),
                      inner_join, by = "Symbol") %>%
