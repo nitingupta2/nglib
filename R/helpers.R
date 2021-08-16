@@ -29,7 +29,7 @@ annualizedSemiDeviation <- function(Z, series_scale = 12) {
     return(semidev)
 }
 
-getPerformanceDataTableList <- function(dfDailyReturns, dfMonthlyRiskFreeReturns, lPastYears=list("Overall")) {
+getPerformanceDataList <- function(dfDailyReturns, dfMonthlyRiskFreeReturns, lPastYears=list("Overall")) {
 
     dfReturns <- getMonthlyReturns(dfDailyReturns) %>% drop_na()
     numberOfMonths = nrow(dfReturns)
@@ -51,21 +51,11 @@ getPerformanceDataTableList <- function(dfDailyReturns, dfMonthlyRiskFreeReturns
         firstDate <- dplyr::first(dfReturnsSub$Date)
         lastDate <- dplyr::last(dfReturnsSub$Date)
         tableCaption <- paste(format(firstDate, "%b %Y"), "-", format(lastDate, "%b %Y"))
-
-        dtPerf <- as.data.frame(dfPerf) %>%
-            datatable(rownames = FALSE, extensions = 'FixedColumns',
-                      caption = htmltools::tags$caption(style = 'caption-side: bottom; text-align: center;', htmltools::h5(tableCaption)),
-                      options = list(columnDefs = list(list(sorting = c("desc","asc"), targets = "_all")), order = list(list(1, "desc")),
-                                     bPaginate = FALSE, searching = FALSE, info = FALSE, fixedColumns = list(leftColumns = 1)),
-                      class = 'compact hover stripe') %>%
-            formatPercentage(c(2:3, 5:7), 2) %>%
-            formatRound(c(4), 2)
+        tableName <- paste0(yrs, ifelse(yrs == 1, " year", ifelse(yrs == "Overall", "" ," years")))
 
         perfCtr <- perfCtr + 1
-        lPerf[[perfCtr]] <- dtPerf
-        lPeriod[[perfCtr]] <- paste0(yrs, ifelse(yrs == 1, " year", ifelse(yrs == "Overall", "" ," years")))
+        lPerf[[perfCtr]] <- list(tableName = tableName, tableCaption = tableCaption, tableData = dfPerf)
     }
-    names(lPerf) <- lPeriod
     return(lPerf)
 }
 
