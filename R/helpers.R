@@ -219,7 +219,7 @@ getMonthlyReturns <- function(dfDailyReturns, removeNAs = T) {
 
 # Returns a table of returns by calendar year
 getCalendarReturns <- function(dfReturns) {
-    dfReturns <- data.frame(dfReturns, row.names = 1)
+    dfReturns <- data.frame(dfReturns %>% getMonthlyReturns(), row.names = 1)
     tblReturns <- PerformanceAnalytics::table.CalendarReturns(dfReturns)
     if(ncol(dfReturns)>1) {
         tblReturns <- tblReturns[13:ncol(tblReturns)]
