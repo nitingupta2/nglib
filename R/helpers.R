@@ -37,7 +37,7 @@ getPerformanceDataList <- function(dfDailyReturns, dfMonthlyRiskFreeReturns, lPa
     lPerf <- list() ; lPeriod <- list() ; perfCtr <- 0
     for(yrs in lPastYears) {
         mths <- numberOfMonths
-        if(yrs != "Overall") mths <- yrs * 12
+        if(!str_detect(str_to_upper(yrs), "ALL")) mths <- yrs * 12
         if(numberOfMonths < mths) next
         dfReturnsSub <- tail(dfReturns, mths)
 
@@ -305,13 +305,13 @@ getCorrelationsVerbose <- function(dfReturns, lPastYears=list('ALL'), strategyNa
     lCorNames <- list()
     i <- 0
     for(yrs in lPastYears) {
-        if(yrs=='ALL') mths = numberOfMonths else mths = yrs*12
+        if(str_detect(str_to_upper(yrs), "ALL")) mths = numberOfMonths else mths = yrs*12
         if(mths > numberOfMonths) next
         dfReturnsPast <- tail(dfReturns, n=mths)
         firstDatePast <- as.Date(first(dfReturnsPast$Date))
         firstYearMonthPast <- paste(lubridate::month(firstDatePast, label=T, abbr=T), lubridate::year(firstDatePast))
 
-        colnames_prefix <- ifelse(yrs=='ALL',
+        colnames_prefix <- ifelse(str_detect(str_to_upper(yrs), "ALL"),
                                   paste(firstYearMonth,"-",lastYearMonth),
                                   paste(firstYearMonthPast,"-",lastYearMonth))
 
@@ -385,7 +385,7 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
     dfPerfFinal <- data.frame()
     numberOfMonths = nrow(dfReturns) ; numberOfAssets = ncol(dfReturns)
     for(yrs in lPastYears) {
-        if(yrs=='ALL') mths = numberOfMonths else mths = yrs*12
+        if(str_detect(str_to_upper(yrs), "ALL")) mths = numberOfMonths else mths = yrs*12
         if(numberOfMonths >= mths) {
             dfReturnsPast <- tail(dfReturns, n=mths)
 
@@ -427,7 +427,7 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
                 dfPerf <- dfPerf %>% head(1)
             }
 
-            if(yrs=="ALL") rownames_prefix <- paste(firstYearMonth,"-",lastYearMonth)
+            if(str_detect(str_to_upper(yrs), "ALL")) rownames_prefix <- paste(firstYearMonth,"-",lastYearMonth)
             else rownames_prefix <- paste(firstYearMonthPast,"-",lastYearMonth)
             rownames(dfPerf) <- paste(rownames_prefix,rownames(dfPerf))
 
