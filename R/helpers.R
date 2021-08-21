@@ -163,10 +163,16 @@ getCapitalGains <- function(symbol) {
         select(Date = 1, CapGain = 2) %>%
         as_tibble() %>%
         mutate(Symbol = symbol) %>%
-        mutate(Date = anytime::anydate(Date)) %>%
-        mutate(CapGain = parse_number(CapGain)) %>%
-        select(Symbol, Date, CapGain) %>%
-        drop_na()
+        drop_na() %>%
+        select(Symbol, Date, CapGain)
+
+    if(nrow(dfCap) > 0 & is_double(dfCap$CapGain)) {
+        dfCap <- dfCap %>%
+            mutate(Date = anytime::anydate(Date)) %>%
+            mutate(CapGain = parse_number(CapGain))
+    } else {
+        dfCap <- tibble(Symbol = character(), Date = as.Date(character()), CapGain = double())
+    }
 
     return(dfCap)
 }
@@ -175,6 +181,7 @@ getCapitalGains <- function(symbol) {
 getOHLCReturns <- function(symbol, firstDownloadDate = "1965-01-01", endDownloadDate = Sys.Date()) {
     print(paste("Downloading data for", symbol))
 
+    dfOHLC <- NULL
     if(str_detect(symbol, "/")) {
         dfSymbol <- Quandl::Quandl(symbol, start_date = firstDownloadDate, end_date = endDownloadDate, collapse = "daily", order = "asc")
         dfSymbol <- dfSymbol %>%
@@ -184,10 +191,13 @@ getOHLCReturns <- function(symbol, firstDownloadDate = "1965-01-01", endDownload
             select(Date, Open:Volume, Adjusted) %>%
             tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
     } else {
-        dfSymbol <- tq_get(symbol, get = "stock.prices", from = firstDownloadDate, to = endDownloadDate) %>%
-            rename_all(str_to_title) %>%
-            dplyr::filter(abs(Open) > EPSILON | abs(High) > EPSILON | abs(Low) > EPSILON | abs(Close) > EPSILON | abs(Adjusted) > EPSILON) %>%
-            tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
+        dfSymbol <- tq_get(symbol, get = "stock.prices", from = firstDownloadDate, to = endDownloadDate)
+        if(!is.na(dfSymbol)) {
+            dfSymbol <- dfSymbol %>%
+                rename_all(str_to_title) %>%
+                dplyr::filter(abs(Open) > EPSILON | abs(High) > EPSILON | abs(Low) > EPSILON | abs(Close) > EPSILON | abs(Adjusted) > EPSILON) %>%
+                tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
+        }
     }
 
     # check additional capital gains returns for mutual and index funds
@@ -205,7 +215,8 @@ getOHLCReturns <- function(symbol, firstDownloadDate = "1965-01-01", endDownload
         }
     }
 
-    return(dfSymbol)
+    if(!is.na(dfSymbol)) dfOHLC <- dfSymbol
+    return(dfOHLC)
 }
 
 
@@ -222,7 +233,7 @@ getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-
         dfSymbol <- dfSymbolPrior %>% bind_rows(dfSymbol[2:nrow(dfSymbol),])
     }
 
-    dfSymbol <- dfSymbol %>% mutate(LogReturn = log(1 + Return))
+    if(!is.null(dfSymbol)) dfSymbol <- dfSymbol %>% mutate(LogReturn = log(1 + Return))
     return(dfSymbol)
 }
 
