@@ -192,7 +192,7 @@ getOHLCReturns <- function(symbol, firstDownloadDate = "1965-01-01", endDownload
             tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
     } else {
         dfSymbol <- tq_get(symbol, get = "stock.prices", from = firstDownloadDate, to = endDownloadDate)
-        if(!is.na(dfSymbol)) {
+        if(is.data.frame(dfSymbol)) {
             dfSymbol <- dfSymbol %>%
                 rename_all(str_to_title) %>%
                 dplyr::filter(abs(Open) > EPSILON | abs(High) > EPSILON | abs(Low) > EPSILON | abs(Close) > EPSILON | abs(Adjusted) > EPSILON) %>%
@@ -215,7 +215,7 @@ getOHLCReturns <- function(symbol, firstDownloadDate = "1965-01-01", endDownload
         }
     }
 
-    if(!is.na(dfSymbol)) dfOHLC <- dfSymbol
+    if(is.data.frame(dfSymbol)) dfOHLC <- dfSymbol
     return(dfOHLC)
 }
 
