@@ -163,13 +163,13 @@ getCapitalGains <- function(symbol) {
         select(Date = 1, CapGain = 2) %>%
         as_tibble() %>%
         mutate(Symbol = symbol) %>%
-        drop_na() %>%
         select(Symbol, Date, CapGain)
 
-    if(nrow(dfCap) > 0 & is_double(dfCap$CapGain)) {
+    if(nrow(dfCap) > 0) {
         dfCap <- dfCap %>%
             mutate(Date = anytime::anydate(Date)) %>%
-            mutate(CapGain = parse_number(CapGain))
+            mutate(CapGain = parse_number(CapGain)) %>%
+            drop_na()
     } else {
         dfCap <- tibble(Symbol = character(), Date = as.Date(character()), CapGain = double())
     }
