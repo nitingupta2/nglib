@@ -148,47 +148,125 @@ getMonthlyRiskFreeReturns <- function(symbol = "DTB3", firstDownloadDate = "2009
         getMonthlyReturns()
 }
 
-# Download daily returns from Yahoo Finance or Quandl
-getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-01-01") {
+# Download capital gains from Yahoo Finance
+getCapitalGains <- function(symbol) {
+    startEpoch <- as.numeric(as.POSIXct("1970-01-01"))
+    lastEpoch <- as.numeric(as.POSIXct(Sys.Date()))
+
+    urlPath <- glue::glue("https://finance.yahoo.com/quote/{symbol}/history?period1={startEpoch}&period2={lastEpoch}&interval=capitalGain%7Cdiv%7Csplit&filter=capital&frequency=1d&includeAdjustedClose=true")
+    htmldoc <- read_html(urlPath)
+
+    dfCap <- htmldoc %>%
+        html_table() %>%
+        as.data.frame() %>%
+        drop_na() %>%
+        select(Date = 1, CapGain = 2) %>%
+        as_tibble() %>%
+        mutate(Symbol = symbol) %>%
+        mutate(Date = anytime::anydate(Date)) %>%
+        mutate(CapGain = parse_number(CapGain)) %>%
+        select(Symbol, Date, CapGain) %>%
+        drop_na()
+
+    return(dfCap)
+}
+
+
+getOHLCReturns <- function(symbol, firstDownloadDate = "1965-01-01", endDownloadDate = Sys.Date()) {
     print(paste("Downloading data for", symbol))
 
-    dfSymbol <- tq_get(symbol, get = "stock.prices", from = firstDownloadDate) %>%
-        dplyr::filter(abs(open) > EPSILON | abs(high) > EPSILON | abs(low) > EPSILON | abs(close) > EPSILON | abs(adjusted) > EPSILON) %>%
-        tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
-
-    if(!is.na(symbolPrior)) {
-        print(paste("Downloading data for", symbolPrior))
-        firstSymbolDate <- min(dfSymbol$date)+1
-
-        # Check to download data from Quandl
-        if(stringr::str_count(symbolPrior, "/") > 0) {
-            dfSymbolPrior <- Quandl::Quandl(symbolPrior,
-                                            start_date = firstDownloadDate, end_date = firstSymbolDate,
-                                            collapse = "daily",
-                                            order = "asc")
-            dfSymbolPrior <- dfSymbolPrior %>%
-                select(c(1, 2)) %>%
-                set_names(c("date", "adjusted")) %>%
-                as_tibble() %>%
-                mutate(open=NA_real_, high=NA_real_, low=NA_real_, close=NA_real_, volume=NA_real_) %>%
-                select(date, open:volume, adjusted) %>%
-                tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
-        } else {
-            dfSymbolPrior <- tq_get(symbolPrior, get = "stock.prices", from = firstDownloadDate, to = firstSymbolDate) %>%
-                dplyr::filter(abs(open) > EPSILON | abs(high) > EPSILON | abs(low) > EPSILON | abs(close) > EPSILON | abs(adjusted) > EPSILON) %>%
-                tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
-        }
-
-        print(paste("Merging data of", symbol, "and", symbolPrior))
-        dfSymbol <- bind_rows(dfSymbolPrior, dfSymbol[2:nrow(dfSymbol),])
+    if(str_detect(symbol, "/")) {
+        dfSymbol <- Quandl::Quandl(symbol, start_date = firstDownloadDate, end_date = endDownloadDate, collapse = "daily", order = "asc")
+        dfSymbol <- dfSymbol %>%
+            select(Date = 1, Adjusted = 2) %>%
+            as_tibble() %>%
+            mutate(Open=NA_real_, High=NA_real_, Low=NA_real_, Close=NA_real_, Volume=NA_real_) %>%
+            select(Date, Open:Volume, Adjusted) %>%
+            tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
+    } else {
+        dfSymbol <- tq_get(symbol, get = "stock.prices", from = firstDownloadDate, to = endDownloadDate) %>%
+            rename_all(str_to_title) %>%
+            dplyr::filter(abs(Open) > EPSILON | abs(High) > EPSILON | abs(Low) > EPSILON | abs(Close) > EPSILON | abs(Adjusted) > EPSILON) %>%
+            tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
     }
 
-    # Capitalize column names and set log return
-    dfSymbol <- dfSymbol %>%
-        rename_all(str_to_title) %>%
-        mutate(LogReturn = log(1 + Return))
+    # check additional capital gains returns for mutual and index funds
+    if(!is.na(str_extract(symbol, "^[A-Za-z]+$")) & (str_count(symbol) >= 5)) {
+        print(paste("Downloading capital gains data for", symbol))
+        dfCap <- getCapitalGains(symbol)
+
+        if(nrow(dfCap) > 0) {
+            dfSymbol <- dfSymbol %>%
+                left_join(dfCap %>% select(-Symbol), by = "Date") %>%
+                arrange(Date) %>%
+                mutate(CapReturn = CapGain/dplyr::lag(Close)) %>%
+                mutate(Return = Return + coalesce(CapReturn, 0)) %>%
+                select(-CapGain, -CapReturn)
+        }
+    }
+
     return(dfSymbol)
 }
+
+
+# Download daily returns from Yahoo Finance or Quandl
+getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-01-01") {
+    dfSymbol <- getOHLCReturns(symbol, firstDownloadDate = firstDownloadDate)
+
+    # combine with data of previous symbol
+    if(!is.na(symbolPrior)) {
+        endDownloadDate <- min(dfSymbol$Date) + 1
+        dfSymbolPrior <- getOHLCReturns(symbolPrior, firstDownloadDate = firstDownloadDate, endDownloadDate = endDownloadDate)
+
+        print(paste("Merging data of", symbol, "and", symbolPrior))
+        dfSymbol <- dfSymbolPrior %>% bind_rows(dfSymbol[2:nrow(dfSymbol),])
+    }
+
+    dfSymbol <- dfSymbol %>% mutate(LogReturn = log(1 + Return))
+    return(dfSymbol)
+}
+
+# Download daily returns from Yahoo Finance or Quandl
+# getDailyReturns <- function(symbol, symbolPrior = NA, firstDownloadDate = "1965-01-01") {
+#     print(paste("Downloading data for", symbol))
+#
+#     dfSymbol <- tq_get(symbol, get = "stock.prices", from = firstDownloadDate) %>%
+#         dplyr::filter(abs(open) > EPSILON | abs(high) > EPSILON | abs(low) > EPSILON | abs(close) > EPSILON | abs(adjusted) > EPSILON) %>%
+#         tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
+#
+#     if(!is.na(symbolPrior)) {
+#         print(paste("Downloading data for", symbolPrior))
+#         firstSymbolDate <- min(dfSymbol$date)+1
+#
+#         # Check to download data from Quandl
+#         if(stringr::str_count(symbolPrior, "/") > 0) {
+#             dfSymbolPrior <- Quandl::Quandl(symbolPrior,
+#                                             start_date = firstDownloadDate, end_date = firstSymbolDate,
+#                                             collapse = "daily",
+#                                             order = "asc")
+#             dfSymbolPrior <- dfSymbolPrior %>%
+#                 select(c(1, 2)) %>%
+#                 set_names(c("date", "adjusted")) %>%
+#                 as_tibble() %>%
+#                 mutate(open=NA_real_, high=NA_real_, low=NA_real_, close=NA_real_, volume=NA_real_) %>%
+#                 select(date, open:volume, adjusted) %>%
+#                 tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
+#         } else {
+#             dfSymbolPrior <- tq_get(symbolPrior, get = "stock.prices", from = firstDownloadDate, to = firstSymbolDate) %>%
+#                 dplyr::filter(abs(open) > EPSILON | abs(high) > EPSILON | abs(low) > EPSILON | abs(close) > EPSILON | abs(adjusted) > EPSILON) %>%
+#                 tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
+#         }
+#
+#         print(paste("Merging data of", symbol, "and", symbolPrior))
+#         dfSymbol <- bind_rows(dfSymbolPrior, dfSymbol[2:nrow(dfSymbol),])
+#     }
+#
+#     # Capitalize column names and set log return
+#     dfSymbol <- dfSymbol %>%
+#         rename_all(str_to_title) %>%
+#         mutate(LogReturn = log(1 + Return))
+#     return(dfSymbol)
+# }
 
 
 # Returns a data frame of monthly returns in the format: Date, <colname_initial> with month end date,

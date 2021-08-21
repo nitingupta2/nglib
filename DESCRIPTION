@@ -19,5 +19,7 @@ Depends:
     RODBC,
     jsonlite,
     lubridate,
-    timetk
+    timetk,
+    rvest,
+    glue
 RoxygenNote: 6.0.1
