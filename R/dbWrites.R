@@ -271,6 +271,42 @@ dbWriteIndexRawData <- function(df, tableName = "IndexRawData") {
 }
 
 
+# write Capital Gains Data
+dbWriteCapitalGainsData <- function(df, tableName = "CapitalGainsData") {
+    # set colnames as in database table
+    vTblHeader <- c("SecurityID","DailyDate","CapitalGain")
+    colnames(df) <- vTblHeader
+
+    # cast variables to datatypes as in database table
+    df <- df %>%
+        mutate(SecurityID = as.character(SecurityID),
+               DailyDate = as.Date(as.character(DailyDate)),
+               CapitalGain = as.numeric(as.character(CapitalGain)))
+
+    # Write index values to database
+    connectionString <- getDatabaseConnectionString()
+    dbhandle <- odbcDriverConnect(connectionString)
+
+    print(paste("Merging", nrow(df), "rows to", tableName))
+
+    # Create a temporary DB table
+    colTypes <- c("varchar(10)","date","decimal(11,8)")
+    names(colTypes) <- c("SecurityID","DailyDate","CapitalGain")
+
+    sqlSave(dbhandle, df, tablename = "tempTbl", rownames = F, safer = T, test = F, verbose = F, varTypes = colTypes)
+
+    # MERGE data in DB table
+    queryString <- "EXEC usp_MergeCapitalGainsData;"
+    sqlQuery(dbhandle, query = queryString)
+
+    # drop tempTbl table
+    sqlDrop(dbhandle, "tempTbl")
+
+    # Close database connection
+    odbcClose(dbhandle)
+}
+
+
 # write Futures data
 dbWriteFuturesData <- function(dfFut, secID, sectorID, tableName = "FuturesData") {
 

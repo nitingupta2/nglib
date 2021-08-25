@@ -67,6 +67,26 @@ dbReadQueryData <- function(queryString) {
 }
 
 
+# Read CapitalGainsData
+dbReadCapitalGainsData <- function(vSecurities, tableName = "CapitalGainsData") {
+    securitiesString <- paste(vSecurities, collapse = "','")
+    queryString <- glue::glue("SELECT * FROM {tableName} WHERE SecurityID IN ('{securitiesString}')")
+
+    df <- dbReadQueryData(queryString)
+
+    if(nrow(df) > 0) {
+        df <- df %>%
+            mutate(Date = as.Date(as.character(DailyDate))) %>%
+            group_by(SecurityID) %>%
+            arrange(Date) %>%
+            ungroup() %>%
+            select(SecurityID, Date, CapitalGain) %>%
+            as_tibble()
+    }
+    return(df)
+}
+
+
 # Read Equities Universe
 dbReadEquitiesUniverse <- function(strategyID, univID) {
     univQueryString <- paste0("EXEC usp_GetEquitiesUniverse '", strategyID, "','", univID, "'")
