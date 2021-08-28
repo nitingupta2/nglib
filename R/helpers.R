@@ -214,6 +214,7 @@ getOHLCReturns <- function(symbol, startDownloadDate = "1965-01-01", endDownload
         if(downloadCapGains) {
             dfCapGains <- getCapitalGains(symbol)
         } else {
+            print(paste("Reading capital gains data for", symbol))
             dfCapGains <- dbReadCapitalGainsData(symbol)
         }
 
