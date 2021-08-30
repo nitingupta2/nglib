@@ -167,10 +167,9 @@ getCapitalGains <- function(symbol, startDownloadDate = "1971-01-01", endDownloa
 
     dfCapGains <- htmldoc %>%
         html_table() %>%
-        as.data.frame() %>%
+        .[[1]] %>%
         drop_na() %>%
         select(Date = 1, CapitalGain = 2) %>%
-        as_tibble() %>%
         mutate(SecurityID = symbol) %>%
         select(SecurityID, Date, CapitalGain)
 
