@@ -67,6 +67,12 @@ dbReadQueryData <- function(queryString) {
 }
 
 
+# get leveraged equities symbols
+dbReadLeveragedETFs <- function() {
+    df <- dbReadQueryData("SELECT * FROM EquitiesLeveraged;")
+    return(df)
+}
+
 # Read CapitalGainsData
 dbReadCapitalGainsData <- function(vSecurities, tableName = "CapitalGainsData") {
     securitiesString <- paste(vSecurities, collapse = "','")
@@ -266,12 +272,14 @@ dbReadStrategiesWeights <- function(dfStrategies) {
     connectionString <- getDatabaseConnectionString()
     dbhandle <- odbcDriverConnect(connectionString)
 
+    dfWeights <- NULL
     for(i in 1:nrow(dfStrategies)) {
         strategyID <- dfStrategies$StrategyID[i]
         univID <- dfStrategies$UniverseID[i]
         wgtMethod <- dfStrategies$WeightMethod[i]
 
-        queryString <- paste0("SELECT RebalanceDate, SecurityID, Weight FROM StrategiesWeights WHERE UPPER(StrategyID) = '", toupper(strategyID),
+        queryString <- paste0("SELECT StrategyID, UniverseID, WeightMethod, SignalDate, RebalanceDate, SecurityID, Weight
+                              FROM StrategiesWeights WHERE UPPER(StrategyID) = '", toupper(strategyID),
                               "' AND UPPER(UniverseID) = '", toupper(univID),
                               "' AND UPPER(WeightMethod) = '", toupper(wgtMethod),
                               "'")
@@ -279,11 +287,12 @@ dbReadStrategiesWeights <- function(dfStrategies) {
         df <- sqlQuery(dbhandle, queryString, stringsAsFactors = F)
         if(nrow(df) > 0) {
             df <- df %>%
-                select(Date = RebalanceDate, SecurityID, Weight) %>%
-                arrange(Date)
+                select(StrategyID, UniverseID, WeightMethod, SignalDate, RebalanceDate, SecurityID, Weight) %>%
+                arrange(SignalDate)
         }
+        dfWeights <- dfWeights %>% bind_rows(df)
     }
 
     odbcClose(dbhandle)
-    return(df)
+    return(dfWeights)
 }

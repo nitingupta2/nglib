@@ -37,15 +37,19 @@ plotYearlyRankings_hc <- function(dfReturns, outlineAsset = NA) {
 
 
 # Plot interactive Portfolio Weights chart
-plotPortfolioWeights_hc <- function(dfWeights) {
+plotPortfolioWeights_hc <- function(dfWeights, plotTitle = "Portfolio Weights") {
     vSecurities <- unique(dfWeights$SecurityID)
 
     # Determine Cash Weights
     dfWeightsFinal <- dfWeights %>%
-        as_tibble() %>%
-        dplyr::filter(SecurityID != "Cash") %>%
+        select(-SignalDate) %>%
+        rename(Date = RebalanceDate) %>%
+        dplyr::filter(str_to_upper(SecurityID) != "CASH") %>%
         mutate(Date = as.Date(as.character(Date)),
                Weight = as.numeric(as.character(Weight))) %>%
+        group_by(Date, SecurityID) %>%
+        summarise(Weight = sum(Weight, na.rm = T)) %>%
+        ungroup() %>%
         spread(SecurityID, Weight) %>%
         mutate(Cash = 1 - rowSums(.[-1], na.rm = T)) %>%
         gather(SecurityID, Weight, -Date) %>%
@@ -53,7 +57,7 @@ plotPortfolioWeights_hc <- function(dfWeights) {
 
     # Find unique security names and put Cash at the end
     vSecurities <- unique(dfWeightsFinal$SecurityID)
-    vSecurities <- c(vSecurities[-which(vSecurities == "Cash")], "Cash")
+    vSecurities <- c(vSecurities[-which(str_to_upper(vSecurities) == "CASH")], "Cash")
 
     dfWeightsFinal <- dfWeightsFinal %>%
         mutate(SecurityID = factor(SecurityID, levels = vSecurities))
@@ -70,7 +74,7 @@ plotPortfolioWeights_hc <- function(dfWeights) {
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
         hc_yAxis(labels = list(format = "{value}%"), opposite = FALSE) %>%
         hc_tooltip(pointFormat = tooltip_format, shared = TRUE, backgroundColor = "#D3D3D3") %>%
-        hc_title(text = "Portfolio Weights")
+        hc_title(text = plotTitle)
 }
 
 
@@ -107,7 +111,7 @@ plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily
 
 
 # Plot Correlations with confidence intervals in given time frames
-plotCorrelationConfidenceIntervals_hc <- function(dfCor, titleText = "Correlations with confidence intervals") {
+plotCorrelationConfidenceIntervals_hc <- function(dfCor, plotTitle = "Correlations with confidence intervals") {
 
     vTimeFrames <- unique(dfCor$time_frame)
     vColors <- getPlotColors(palette = "main", n = length(vTimeFrames))
@@ -127,7 +131,7 @@ plotCorrelationConfidenceIntervals_hc <- function(dfCor, titleText = "Correlatio
         hc_yAxis(title = list(text = "Correlation")) %>%
         hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, crosshairs = TRUE, valueDecimals = 2, headerFormat = "{point.key}<br>") %>%
         hc_chart(inverted = TRUE) %>%
-        hc_title(text = titleText)
+        hc_title(text = plotTitle)
 }
 
 
@@ -138,7 +142,7 @@ plotRollingExcessReturns_hc <- function(dfReturns, dfRecessions=NULL, coreStrate
                ExcessReturn = ExcessReturn * 100)
 
     # determine title text
-    plotTitle <- glue::glue("Rolling Annualized Excess {rollingMonths} Months Returns Over {baseBenchmarkName}")
+    plotTitle <- glue::glue("{coreStrategyName} Rolling Annualized Excess {rollingMonths} Months Returns Over {baseBenchmarkName}")
 
     # tooltip format
     tooltip_format <- "<span style=\"font-weight:bold\">{series.name}</span>: <b>{point.y:.2f}%</b><br/>"
@@ -257,7 +261,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("
 
 
 # Plot interactive Performance chart
-plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "withgrey") {
+plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, plotTitle = "Cumulative Performance", palette_name = "withgrey") {
     # exclude incomplete rows
     dfReturns <- dfReturns %>% drop_na()
     vStrategyNames <- names(dfReturns)[-1]
@@ -299,7 +303,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, palette_name = "w
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
         hc_xAxis(type = "datetime") %>%
         hc_tooltip(split = TRUE) %>%
-        hc_title(text = "Cumulative Performance") %>%
+        hc_title(text = plotTitle) %>%
         hc_legend(enabled = TRUE)
 
     for(i in seq_along(vStrategyNames)) {

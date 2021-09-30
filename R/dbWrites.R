@@ -41,7 +41,7 @@ dbWriteStrategiesReturns <- function(df, tableName = "StrategiesReturns") {
 # write Strategies Weights to DB
 dbWriteStrategiesWeights <- function(df, tableName = "StrategiesWeights") {
     # set colnames as in database table
-    vTblHeader <- c("StrategyID","UniverseID","WeightMethod","RebalanceDate","SecurityID","Weight")
+    vTblHeader <- c("StrategyID","UniverseID","WeightMethod","SignalDate","RebalanceDate","SecurityID","Weight")
     colnames(df) <- vTblHeader
 
     # cast variables to datatypes as in database table
@@ -49,6 +49,7 @@ dbWriteStrategiesWeights <- function(df, tableName = "StrategiesWeights") {
         mutate(StrategyID = as.character(StrategyID),
                UniverseID = as.character(UniverseID),
                WeightMethod = as.character(WeightMethod),
+               SignalDate = as.Date(as.character(SignalDate)),
                RebalanceDate = as.Date(as.character(RebalanceDate)),
                SecurityID = as.character(SecurityID),
                Weight = as.numeric(as.character(Weight)))
@@ -61,7 +62,7 @@ dbWriteStrategiesWeights <- function(df, tableName = "StrategiesWeights") {
     dbhandle <- odbcDriverConnect(connectionString)
 
     # Create a temporary DB table
-    colTypes <- c("varchar(20)","varchar(20)","varchar(5)","date","varchar(10)","decimal(5,4)")
+    colTypes <- c("varchar(20)","varchar(20)","varchar(5)","date","date","varchar(10)","decimal(5,4)")
     names(colTypes) <- vTblHeader
 
     sqlSave(dbhandle, df, tablename = "tempTbl", rownames = F, safer = T, varTypes = colTypes, nastring = "NULL")

@@ -192,13 +192,18 @@ plotRollingExcessReturns <- function(dfReturns, dfRecessions=NULL, coreStrategyN
 ###############################################################################
 # Plot Portfolio Weights
 plotPortfolioWeights <- function(dfWeights, plotMainTitle = NA, plotCtr = NA) {
-    vSecurities <- unique(dfWeights$SecurityID)
+    vSecurities <- unique(dfWeights$SecurityID) %>% na.omit()
 
     # Determine Cash Weights
     dfWeightsFinal <- dfWeights %>%
-        dplyr::filter(SecurityID != "Cash") %>%
+        select(-SignalDate) %>%
+        rename(Date = RebalanceDate) %>%
+        dplyr::filter(str_to_upper(SecurityID) != "CASH") %>%
         mutate(Date = as.Date(as.character(Date)),
                Weight = as.numeric(as.character(Weight))) %>%
+        group_by(Date, SecurityID) %>%
+        summarise(Weight = sum(Weight, na.rm = T)) %>%
+        ungroup() %>%
         spread(SecurityID, Weight) %>%
         mutate(Cash = 1 - rowSums(.[-1], na.rm = T)) %>%
         gather(SecurityID, Weight, -Date) %>%
@@ -206,7 +211,7 @@ plotPortfolioWeights <- function(dfWeights, plotMainTitle = NA, plotCtr = NA) {
 
     # Find unique security names and put Cash at the end
     vSecurities <- unique(dfWeightsFinal$SecurityID)
-    vSecurities <- c(vSecurities[-which(vSecurities == "Cash")], "Cash")
+    vSecurities <- c(vSecurities[-which(str_to_upper(vSecurities) == "CASH")], "Cash")
     numSecurities <- length(vSecurities)
 
     firstPerfDate <- as.Date(min(dfWeightsFinal$Date))

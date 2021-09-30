@@ -29,6 +29,14 @@ annualizedSemiDeviation <- function(Z, series_scale = 12) {
     return(semidev)
 }
 
+
+## Return the date range starting and up to the point where all series have non NA values
+getAnalysisDateRange <- function(dfDailyReturns) {
+    dateRange <- dfDailyReturns %>% filter(!if_any(everything(), ~ is.na(.x))) %>% pull(Date) %>% range()
+    return(dateRange)
+}
+
+
 getPerformanceDataList <- function(dfDailyReturns, dfMonthlyRiskFreeReturns, lPastYears=list("Overall")) {
 
     dfReturns <- getMonthlyReturns(dfDailyReturns) %>% drop_na()
@@ -585,7 +593,6 @@ getDateBreaks <- function(vDates) {
     return(dateBreaks)
 }
 
-
 # get Risk Free Symbols
 getRiskFreeRatesSymbols <- function() {
     return(c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR","TBILLS","TBills","Tbills","TBILL_3M","Cash","CASH"))
@@ -612,6 +619,19 @@ getFuturesSymbols <- function() {
     names(vENMT) <- rep("ENMT", length(vENMT))
 
     vSymbols <- c(vCURR, vRATE, vBOND, vSTOX, vAGRI, vENMT)
+}
+
+# get most recent rebalance date: Last month if the current date is within 3 weeks from the beginning of month, else latest rebalance date
+getMostRecentRebalanceDate <- function(vRebalanceDates) {
+    vRebalanceDates <- as.Date(as.character(vRebalanceDates))
+    currentDate <- Sys.Date()
+
+    if(lubridate::mday(currentDate) < 25) {
+        lastRebalanceDate <- dplyr::nth(vRebalanceDates, -2)
+    } else {
+        lastRebalanceDate <- dplyr::nth(vRebalanceDates, -1)
+    }
+    return(lastRebalanceDate)
 }
 
 
