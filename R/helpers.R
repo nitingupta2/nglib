@@ -626,7 +626,7 @@ getMostRecentRebalanceDate <- function(vRebalanceDates) {
     vRebalanceDates <- as.Date(as.character(vRebalanceDates))
     currentDate <- Sys.Date()
 
-    if(lubridate::mday(currentDate) < 25) {
+    if(lubridate::mday(currentDate) < 25 & (month(currentDate) == month(dplyr::last(vRebalanceDates)))) {
         lastRebalanceDate <- dplyr::nth(vRebalanceDates, -2)
     } else {
         lastRebalanceDate <- dplyr::nth(vRebalanceDates, -1)
