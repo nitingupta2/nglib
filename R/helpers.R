@@ -317,11 +317,17 @@ getMonthlyReturns <- function(dfDailyReturns, removeNAs = T) {
 
     cumreturn <- function(Z) {if(sum(is.na(Z))==length(Z)) return(NA) else return(prod(1L + Z, na.rm = T) - 1L)}
 
+    # dfMonthlyReturns <- dfDailyReturns %>%
+    #     mutate(MonthlyDate = as.Date(as.yearmon(DailyDate), frac=1)) %>%
+    #     group_by(MonthlyDate) %>%
+    #     dplyr::summarise_if(is_bare_double, list(cumreturn)) %>%
+    #     dplyr::rename(Date = MonthlyDate)
+
     dfMonthlyReturns <- dfDailyReturns %>%
-        mutate(Date = as.Date(as.yearmon(DailyDate), frac=1)) %>%
-        dplyr::select(-DailyDate) %>%
-        group_by(Date) %>%
-        dplyr::summarise_all(list(cumreturn))
+        mutate(MonthlyDate = ceiling_date(DailyDate, "month") - days(1))  %>%
+        group_by(MonthlyDate) %>%
+        dplyr::summarise_if(is_bare_double, list(cumreturn)) %>%
+        dplyr::rename(Date = MonthlyDate)
 
     if(removeNAs) dfMonthlyReturns <- dfMonthlyReturns %>% drop_na()
 
