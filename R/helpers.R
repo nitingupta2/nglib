@@ -170,7 +170,7 @@ getCapitalGains <- function(symbol, startDownloadDate = "1971-01-01", endDownloa
     startEpoch <- as.numeric(as.POSIXlt(startDownloadDate))
     endEpoch <- as.numeric(as.POSIXlt(endDownloadDate))
 
-    urlPath <- glue::glue("https://finance.yahoo.com/quote/{symbol}/history?period1={startEpoch}&period2={endEpoch}&interval=capitalGain%7Cdiv%7Csplit&filter=capital&frequency=1d&includeAdjustedClose=true")
+    urlPath <- glue::glue("https://finance.yahoo.com/quote/{symbol}/history?period1={startEpoch}&period2={endEpoch}&interval=capitalGain%7Cdiv%7Csplit&filter=capitalGain&frequency=1d&includeAdjustedClose=true")
     htmldoc <- read_html(urlPath)
 
     dfCapGains <- htmldoc %>%
