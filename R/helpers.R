@@ -131,18 +131,24 @@ getRecentReturns <- function(dfReturns, pastYears = 12) {
         dplyr::rename(Year = Date) %>%
         mutate(Year = paste(lubridate::month(Year, label = TRUE, abbr = TRUE), lubridate::year(Year)))
 
-    dfYearly <- table.CalendarReturns(data.frame(dfReturns, row.names = 1), as.perc = FALSE, digits = 4) %>%
+    dfYearly <- getCalendarReturns(dfReturns, as.perc = F, digits = 4) %>%
+        # table.CalendarReturns(data.frame(dfReturns, row.names = 1), as.perc = FALSE, digits = 4) %>%
         timetk::tk_tbl(rename_index = "Year", silent = TRUE) %>%
         arrange(desc(Year)) %>%
         mutate(Year = as.character(Year)) %>%
-        select(-c(2:13)) %>%
+        # select(-c(2:13)) %>%
         head(pastYears)
 
-    dfRecentReturns <- bind_rows(dfMTD, dfYearly) %>%
-        data.frame(row.names = 1) %>%
-        t() %>%
-        timetk::tk_tbl(rename_index = "Symbol", silent = TRUE) %>%
-        mutate(Symbol = factor(Symbol, levels = unique(Symbol)))
+    # dfRecentReturns <- bind_rows(dfMTD, dfYearly) %>%
+    #     data.frame(row.names = 1) %>%
+    #     t() %>%
+    #     timetk::tk_tbl(rename_index = "Symbol", silent = TRUE) %>%
+    #     mutate(Symbol = factor(Symbol, levels = unique(Symbol)))
+
+    dfRecentReturns <- bind_rows(dfMTD, dfYearly) %>%               # transpose the tibble
+        as_tibble() %>%
+        pivot_longer(cols = c(-Year), names_to = "Symbol") %>%
+        pivot_wider(names_from = c(Year))
 }
 
 
@@ -336,11 +342,14 @@ getMonthlyReturns <- function(dfDailyReturns, removeNAs = T) {
 
 
 # Returns a table of returns by calendar year
-getCalendarReturns <- function(dfReturns) {
-    dfReturns <- data.frame(dfReturns %>% getMonthlyReturns(), row.names = 1)
-    tblReturns <- PerformanceAnalytics::table.CalendarReturns(dfReturns)
-    if(ncol(dfReturns)>1) {
+getCalendarReturns <- function(dfReturns, as.perc = TRUE, digits = 1) {
+    dfMonthly <- dfReturns %>% getMonthlyReturns()
+    vColnames <- colnames(dfMonthly[-1])
+    dfMonthly <- data.frame(dfMonthly, row.names = 1)
+    tblReturns <- PerformanceAnalytics::table.CalendarReturns(dfMonthly, as.perc = as.perc, digits = digits)
+    if(ncol(dfMonthly)>1) {
         tblReturns <- tblReturns[13:ncol(tblReturns)]
+        colnames(tblReturns) <- vColnames
     }
     return(tblReturns)
 }
