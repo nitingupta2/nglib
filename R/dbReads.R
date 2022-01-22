@@ -8,7 +8,7 @@ getDatabaseConnectionString <- function() {
 
 # Read data for testing
 dbReadTestData <- function() {
-    dfReturns <- dbReadBenchmarksData(c("SP500TR","R2000TR","GEM","BTOP50"))
+    dfReturns <- dbReadBenchmarksData(c("SP500TR","R2000TR","ACWX","BTOP50"))
 }
 
 # Read Benchmarks Data

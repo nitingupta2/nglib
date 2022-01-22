@@ -261,7 +261,8 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("
 
 
 # Plot interactive Performance chart
-plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, plotTitle = "Cumulative Performance", palette_name = "withgrey") {
+plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("monthly", "daily", "weekly"), palette_name = "withgrey",
+                               plotTitle = "Cumulative Performance") {
     # exclude incomplete rows
     dfReturns <- dfReturns %>% drop_na()
     vStrategyNames <- names(dfReturns)[-1]
@@ -286,12 +287,13 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, plotTitle = "Cumu
                          list(type = "year", count = 20, text = "20y"), list(type = "all", text = "All"))
 
     # tooltips
-    tooltip_format_dd <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>{point.y:.2f}%</b><br/>"
-    tooltip_format_perf <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>${point.change:.2f}</b><br/>"
-    # pointFormatter_perf <- JS("function() {
-    #                           return '<span style=\"color:' + this.series.color + ';font-weight:bold\">'+ this.series.name +
-    #                           '<b>: '+ Highcharts.numberFormat(this.change-100.0, 2) +'%' + '</b>';
-    #                         }")
+    pointFormatter_perf <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
+                                  '<td style="text-align: right"><b>${point.change:.2f}</b></td></tr>')
+    pointFormatter_dd <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
+                                  '<td style="text-align: right"><b>{point.y:.2f}%</b></td></tr>')
+
+    # tooltip_format_perf <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>${point.change:.2f}</b><br/>"
+    # tooltip_format_dd <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>{point.y:.2f}%</b><br/>"
 
     # plot cumulative returns and drawdowns
     hcplot <- highchart(type = "chart") %>%
@@ -302,20 +304,28 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, plotTitle = "Cumu
                                 opposite=TRUE)) %>%
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
         hc_xAxis(type = "datetime") %>%
-        hc_tooltip(split = TRUE) %>%
+        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, table = TRUE, sort = FALSE,
+                   xDateFormat = ifelse(returnFrequency[1] == "daily", "%b %d, %Y", "%b %Y")) %>%
         hc_title(text = plotTitle) %>%
         hc_legend(enabled = TRUE)
 
     for(i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
         hcplot <- hcplot %>%
-            hc_add_series(xtCumReturns[,strategyName], yAxis = 0, name = strategyName, tooltip = list(pointFormat = tooltip_format_perf),
+            hc_add_series(xtCumReturns[,strategyName], yAxis = 0, name = strategyName, tooltip = list(pointFormat = pointFormatter_perf),
                           id = glue::glue("{strategyName}_perf"), compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
     }
     for(i in seq_along(vStrategyNames)) {
+        new_pointFormatter_dd <- pointFormatter_dd
+        if(i == 1) {
+            new_pointFormatter_dd <- paste0('<tr><td style="color: grey; font-weight:bold">Drawdowns: </td>',
+                                            '<td style="text-align: right"></td></tr>',
+                                            new_pointFormatter_dd)
+        }
+
         strategyName <- vStrategyNames[i]
         hcplot <- hcplot %>%
-            hc_add_series(xtDrawdowns[,strategyName], yAxis = 1, name = strategyName, tooltip = list(pointFormat = tooltip_format_dd),
+            hc_add_series(xtDrawdowns[,strategyName], yAxis = 1, name = strategyName, tooltip = list(pointFormat = new_pointFormatter_dd),
                           id = glue::glue("{strategyName}_dd"), linkedTo=glue::glue("{strategyName}_perf"), marker = list(enabled = FALSE))
     }
     hcplot <- hcplot %>% hc_colors(vColors)
