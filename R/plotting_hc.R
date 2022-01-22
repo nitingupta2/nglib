@@ -239,11 +239,11 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
         hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
         hc_legend(enabled = TRUE) %>%
-        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE,
+        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, sort = TRUE, table = TRUE,
                    xDateFormat = ifelse(returnFrequency[1] == "daily", "%b %d, %Y", "%b %Y"),
-                   headerFormat = "<center/>{point.key}<br><table>",
-                   pointFormat = pointFormatter_perf,
-                   footerFormat = "</table>")
+                   # headerFormat = "<center/>{point.key}<br><table>",
+                   pointFormat = pointFormatter_perf)
+        # hc_tooltip(shared = TRUE, split = FALSE, sort = TRUE, table = TRUE)
 
     for(i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
