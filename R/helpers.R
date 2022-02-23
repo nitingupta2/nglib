@@ -97,8 +97,8 @@ getPerformanceMetrics <- function(dfDailyReturns, dfMonthlyRiskFreeReturns) {
         gather(Symbol, WorstDD) %>%
         mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
-    dfMonthwise <- df %>% dplyr::summarise(`Worst Month` = min(Ra),
-                                           `Best Month` = max(Ra))
+    dfMonthwise <- df %>% dplyr::summarise(`Best Month` = max(Ra),
+                                           `Worst Month` = min(Ra))
                                            #`Profitable Months` = mean((Ra + 1e-12) >= 0.0))
 
     dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfSkewness, dfMonthwise),
