@@ -266,48 +266,6 @@ getDailyReturns <- function(symbol, symbolPrior = NA, startDownloadDate = "1965-
     return(dfSymbol)
 }
 
-# Download daily returns from Yahoo Finance or Quandl
-# getDailyReturns <- function(symbol, symbolPrior = NA, startDownloadDate = "1965-01-01") {
-#     print(paste("Downloading data for", symbol))
-#
-#     dfSymbol <- tq_get(symbol, get = "stock.prices", from = startDownloadDate) %>%
-#         dplyr::filter(abs(open) > EPSILON | abs(high) > EPSILON | abs(low) > EPSILON | abs(close) > EPSILON | abs(adjusted) > EPSILON) %>%
-#         tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
-#
-#     if(!is.na(symbolPrior)) {
-#         print(paste("Downloading data for", symbolPrior))
-#         firstSymbolDate <- min(dfSymbol$date)+1
-#
-#         # Check to download data from Quandl
-#         if(stringr::str_count(symbolPrior, "/") > 0) {
-#             dfSymbolPrior <- Quandl::Quandl(symbolPrior,
-#                                             start_date = startDownloadDate, end_date = firstSymbolDate,
-#                                             collapse = "daily",
-#                                             order = "asc")
-#             dfSymbolPrior <- dfSymbolPrior %>%
-#                 select(c(1, 2)) %>%
-#                 set_names(c("date", "adjusted")) %>%
-#                 as_tibble() %>%
-#                 mutate(open=NA_real_, high=NA_real_, low=NA_real_, close=NA_real_, volume=NA_real_) %>%
-#                 select(date, open:volume, adjusted) %>%
-#                 tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
-#         } else {
-#             dfSymbolPrior <- tq_get(symbolPrior, get = "stock.prices", from = startDownloadDate, to = firstSymbolDate) %>%
-#                 dplyr::filter(abs(open) > EPSILON | abs(high) > EPSILON | abs(low) > EPSILON | abs(close) > EPSILON | abs(adjusted) > EPSILON) %>%
-#                 tq_mutate(select = adjusted, mutate_fun = Delt, col_rename = "Return")
-#         }
-#
-#         print(paste("Merging data of", symbol, "and", symbolPrior))
-#         dfSymbol <- bind_rows(dfSymbolPrior, dfSymbol[2:nrow(dfSymbol),])
-#     }
-#
-#     # Capitalize column names and set log return
-#     dfSymbol <- dfSymbol %>%
-#         rename_all(str_to_title) %>%
-#         mutate(LogReturn = log(1 + Return))
-#     return(dfSymbol)
-# }
-
 
 # Returns a data frame of monthly returns in the format: Date, <colname_initial> with month end date,
 # from a data frame containing daily returns in the format:
@@ -322,12 +280,6 @@ getMonthlyReturns <- function(dfDailyReturns, removeNAs = T) {
     }
 
     cumreturn <- function(Z) {if(sum(is.na(Z))==length(Z)) return(NA) else return(prod(1L + Z, na.rm = T) - 1L)}
-
-    # dfMonthlyReturns <- dfDailyReturns %>%
-    #     mutate(MonthlyDate = as.Date(as.yearmon(DailyDate), frac=1)) %>%
-    #     group_by(MonthlyDate) %>%
-    #     dplyr::summarise_if(is_bare_double, list(cumreturn)) %>%
-    #     dplyr::rename(Date = MonthlyDate)
 
     dfMonthlyReturns <- dfDailyReturns %>%
         mutate(MonthlyDate = ceiling_date(DailyDate, "month") - days(1))  %>%
