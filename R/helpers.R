@@ -138,18 +138,10 @@ getRecentReturns <- function(dfReturns, pastYears = 12) {
         mutate(Year = paste(lubridate::month(Year, label = TRUE, abbr = TRUE), lubridate::year(Year)))
 
     dfYearly <- getCalendarReturns(dfReturns, as.perc = F, digits = 4) %>%
-        # table.CalendarReturns(data.frame(dfReturns, row.names = 1), as.perc = FALSE, digits = 4) %>%
         timetk::tk_tbl(rename_index = "Year", silent = TRUE) %>%
         arrange(desc(Year)) %>%
         mutate(Year = as.character(Year)) %>%
-        # select(-c(2:13)) %>%
         head(pastYears)
-
-    # dfRecentReturns <- bind_rows(dfMTD, dfYearly) %>%
-    #     data.frame(row.names = 1) %>%
-    #     t() %>%
-    #     timetk::tk_tbl(rename_index = "Symbol", silent = TRUE) %>%
-    #     mutate(Symbol = factor(Symbol, levels = unique(Symbol)))
 
     dfRecentReturns <- bind_rows(dfMTD, dfYearly) %>%               # transpose the tibble
         as_tibble() %>%
@@ -498,15 +490,23 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
                 rownames(dfMaxDD) <- "Worst Drawdown"
             }
 
+            dfCurrDD <- Drawdowns(dfDailyReturnsAssets, invert = F) %>% tail(1) * 100
+            rownames(dfCurrDD) <- "Current Drawdown"
+            if(is.null(dim(dfCurrDD))) {
+                dim(dfCurrDD) <- c(1, 1)
+                colnames(dfCurrDD) <- colnames(dfReturnsAssets)
+            }
+
             dfPerf <- table.AnnualizedReturns(dfReturnsAssets, scale=12, Rf=dfReturnsRiskFree)
             dfPerf[c(1,2),] <- dfPerf[c(1,2),] * 100
             rownames(dfPerf)[3] <- str_replace(row.names(dfPerf)[3], "Annualized ", "")
 
-            dfPerf <- rbind(dfPerf, dfMaxDD)
+            dfPerf <- rbind(dfPerf, dfMaxDD, dfCurrDD)
             dfPerf <- format(round(dfPerf, digits = 2), justify = 'right', nsmall = 2, scientific = F)
             dfPerf[1,] <- paste0(dfPerf[1,], "%")
             dfPerf[2,] <- paste0(dfPerf[2,], "%")
             dfPerf[4,] <- paste0(dfPerf[4,], "%")
+            dfPerf[5,] <- paste0(dfPerf[5,], "%")
 
             if(showReturnsOnly) {
                 dfPerf <- dfPerf %>% head(1)

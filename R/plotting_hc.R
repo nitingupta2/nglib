@@ -269,11 +269,12 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency =
     vStrategyNames <- gsub(" ", ".", vStrategyNames)
 
     # compute cumulative returns
-    dfCumReturns <- dfReturns %>% mutate_if(is_bare_double, function(Z) exp(cumsum(log(1 + Z))))
+    dfCumReturns <- dfReturns %>% as_tibble() %>% mutate_if(is_bare_double, function(Z) exp(cumsum(log(1 + Z))))
     xtCumReturns <- timetk::tk_xts(dfCumReturns, date_var = Date, silent = TRUE)
 
     # compute drawdowns
     dfDrawdowns <- dfReturns %>%
+        as_tibble() %>%
         mutate_if(is_bare_double, function(Z) suppressWarnings(as.vector(timeSeries::drawdowns(timeSeries::as.timeSeries(Z))))) %>%
         mutate_if(is_bare_double, function(Z) Z*100)
     xtDrawdowns <- timetk::tk_xts(dfDrawdowns, date_var = Date, silent = TRUE)
@@ -326,7 +327,8 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency =
         strategyName <- vStrategyNames[i]
         hcplot <- hcplot %>%
             hc_add_series(xtDrawdowns[,strategyName], yAxis = 1, name = strategyName, tooltip = list(pointFormat = new_pointFormatter_dd),
-                          id = glue::glue("{strategyName}_dd"), linkedTo=glue::glue("{strategyName}_perf"), marker = list(enabled = FALSE))
+                          id = glue::glue("{strategyName}_dd"), linkedTo=glue::glue("{strategyName}_perf"),
+                          marker = list(enabled = FALSE))
     }
     hcplot <- hcplot %>% hc_colors(vColors)
 
