@@ -97,23 +97,26 @@ getPerformanceMetrics <- function(dfDailyReturns, dfMonthlyRiskFreeReturns) {
         gather(Symbol, WorstDD) %>%
         mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
-    dfMonthwise <- df %>% dplyr::summarise(`Best Month` = max(Ra),
-                                           `Worst Month` = min(Ra))
-                                           #`Profitable Months` = mean((Ra + 1e-12) >= 0.0))
+    # summarise current drawdown on daily returns
+    dfCurrDD <- dfDailyReturns %>%
+        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(Drawdowns(.x, invert = F)) %>% last()) %>%
+        gather(Symbol, CurrDD) %>%
+        mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
-    dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfSkewness, dfMonthwise),
+    dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfCurrDD, dfSkewness),
                      inner_join, by = "Symbol") %>%
         mutate(Sharpe = AnnualizedReturnExcess/AnnualizedStdDev,
                Sortino = AnnualizedReturnExcess/AnnualizedSemidev) %>%
         select(-AnnualizedReturnExcess, -AnnualizedSemidev, -Sortino, -Skewness) %>%
-        select(Symbol, AnnualizedReturn, AnnualizedStdDev, Sharpe, WorstDD, everything())
+        select(Symbol, AnnualizedReturn, AnnualizedStdDev, Sharpe, WorstDD, CurrDD, everything())
 
     vColNames <- colnames(dfPerf) %>%
         str_replace_all("Annualized", "Annualized ") %>%
         str_replace("Sharpe", sprintf("Sharpe Rf=%s", riskFreeRatePercent)) %>%
         str_replace("Sortino", sprintf("Sortino MAR=%s", riskFreeRatePercent)) %>%
         str_replace("Calmar", "Calmar Ratio") %>%
-        str_replace("WorstDD", "Worst Drawdown")
+        str_replace("WorstDD", "Worst Drawdown") %>%
+        str_replace("CurrDD", "Current Drawdown")
     colnames(dfPerf) <- vColNames
 
     return(dfPerf)
