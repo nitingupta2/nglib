@@ -67,9 +67,9 @@ getPerformanceDataList <- function(dfDailyReturns, dfMonthlyRiskFreeReturns, lPa
     return(lPerf)
 }
 
-getPerformanceMetrics <- function(dfDailyReturns, dfMonthlyRiskFreeReturns) {
+getPerformanceMetrics <- function(dfDailyReturnsSub, dfMonthlyRiskFreeReturns) {
 
-    dfReturns <- dfMonthlyRiskFreeReturns %>% inner_join(getMonthlyReturns(dfDailyReturns), by = "Date") %>% drop_na()
+    dfReturns <- dfMonthlyRiskFreeReturns %>% inner_join(getMonthlyReturns(dfDailyReturnsSub), by = "Date") %>% drop_na()
 
     firstDate <- first(dfReturns$Date) ; lastDate <- last(dfReturns$Date)
     firstYearMonth <- paste(lubridate::month(firstDate, label=T, abbr=T),lubridate::year(firstDate))
@@ -92,15 +92,18 @@ getPerformanceMetrics <- function(dfDailyReturns, dfMonthlyRiskFreeReturns) {
     dfSkewness <- df %>% dplyr::summarise(Skewness = skewness(Ra))
 
     # summarise maximum drawdown on daily returns
-    dfWorstDD <- dfDailyReturns %>%
+    dfWorstDD <- dfDailyReturnsSub %>%
         dplyr::summarise_if(is_bare_double, ~ suppressWarnings(maxDrawdown(.x, invert = F))) %>%
         gather(Symbol, WorstDD) %>%
+        as_tibble() %>%
         mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
     # summarise current drawdown on daily returns
-    dfCurrDD <- dfDailyReturns %>%
+    dfCurrDD <- dfDailyReturnsSub %>%
         dplyr::summarise_if(is_bare_double, ~ suppressWarnings(Drawdowns(.x, invert = F)) %>% last()) %>%
         gather(Symbol, CurrDD) %>%
+        mutate(CurrDD = as.numeric(CurrDD)) %>%
+        as_tibble() %>%
         mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
     dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfCurrDD, dfSkewness),
