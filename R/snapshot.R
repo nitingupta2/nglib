@@ -39,8 +39,7 @@ getSnapshot <- function(vSymbols) {
 
         dfSnapshot <- dfSnapshot %>%
             mutate(TradeTime = map2_chr(TradeTime, Timezone, .f = ~getTradeTime(.x, .y))) %>%
-            mutate(MarketCap = parse_number(MarketCap)) %>%
-            mutate(MarketCap = ifelse(!is.na(MarketCap), paste0(round(MarketCap/1000000000, 2), "B"), MarketCap)) %>%
+            mutate(MarketCap = ifelse(MarketCap >= 1, paste0(round(MarketCap/1000000000, 2), "B"), MarketCap)) %>%
             # mutate(MarketCap = ifelse(MarketCap >= 1000000000,
             #                           paste0(round(MarketCap/1000000000, 2), "B"),
             #                           paste0(round(MarketCap/1000000, 2), "M"))) %>%
