@@ -72,7 +72,7 @@ plotPortfolioWeights_hc <- function(dfWeights, plotTitle = "Portfolio Weights") 
         hc_colors(colors = vColors) %>%
         hc_plotOptions(area = list(stacking = "percent", lineWidth = 1, marker = list(lineWidth = 1))) %>%
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
-        hc_yAxis(labels = list(format = "{value}%"), opposite = FALSE) %>%
+        hc_yAxis(labels = list(format = "{value}%"), opposite = FALSE, showFirstLabel = FALSE) %>%
         hc_tooltip(pointFormat = tooltip_format, shared = TRUE, backgroundColor = "#D3D3D3") %>%
         hc_title(text = plotTitle)
 }
