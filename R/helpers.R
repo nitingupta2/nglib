@@ -5,7 +5,8 @@ annualizedReturns <- function(Z, series_scale = 12) {
     Z <- na.omit(Z)
     numPeriods <- length(Z)
     if(numPeriods > 0) {
-        cumReturn <- cumprod(1.0 + Z)
+        # cumReturn <- cumprod(1.0 + Z)
+        cumReturn <- exp(cumsum(log(1.0 + Z)))
         anlReturn <- (cumReturn[length(cumReturn)])^(series_scale/numPeriods) - 1.0
         return(anlReturn)
     } else {
@@ -100,7 +101,7 @@ getPerformanceMetrics <- function(dfDailyReturnsSub, dfMonthlyRiskFreeReturns) {
 
     # summarise current drawdown on daily returns
     dfCurrDD <- dfDailyReturnsSub %>%
-        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(Drawdowns(.x, invert = F)) %>% last()) %>%
+        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(DrawdownPeak(.x, invert = F)) %>% last()) %>%
         gather(Symbol, CurrDD) %>%
         mutate(CurrDD = as.numeric(CurrDD)) %>%
         as_tibble() %>%
@@ -125,7 +126,8 @@ getPerformanceMetrics <- function(dfDailyReturnsSub, dfMonthlyRiskFreeReturns) {
         str_replace("Sortino", sprintf("Sortino MAR=%s", riskFreeRatePercent)) %>%
         str_replace("Calmar", "Calmar Ratio") %>%
         str_replace("WorstDD", "Worst Drawdown") %>%
-        str_replace("CurrDD", "Current Drawdown")
+        str_replace("CurrDD", "Current Drawdown") %>%
+        str_replace("Recovery", "From Bottom")
     colnames(dfPerf) <- vColNames
 
     return(dfPerf)
@@ -506,11 +508,12 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
                 rownames(dfRecovery) <- "Recovery"
 
             } else {
-                dfCurrDD <- Drawdowns(dfDailyReturnsAssets, invert = F) %>% tail(1) * 100
+                dfCurrDD <- dfDailyReturnsAssets %>%
+                    dplyr::summarise_if(is_bare_double, ~ suppressWarnings(DrawdownPeak(.x, invert = F)) %>% last()) * 100
                 rownames(dfCurrDD) <- "Current Drawdown"
 
                 dfRecovery <- (dfCurrDD - dfMaxDD) * 100/(100 + dfMaxDD)
-                rownames(dfRecovery) <- "Recovery"
+                rownames(dfRecovery) <- "From Bottom"
             }
 
             dfPerf <- table.AnnualizedReturns(dfReturnsAssets, scale=12, Rf=dfReturnsRiskFree)
