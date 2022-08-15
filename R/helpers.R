@@ -483,33 +483,46 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
                 dfReturnsRiskFree <- data.frame(vector(mode='numeric', length=nrow(dfReturnsPast)))
                 rownames(dfReturnsRiskFree)=rownames(dfReturnsAssets)
             }
+
+            dfCurrDD <- NULL; dfRecovery <- NULL
             dfMaxDD <- maxDrawdown(dfDailyReturnsAssets, invert = F) * 100
             if(is.null(dim(dfMaxDD))) {
                 dim(dfMaxDD) <- c(1, 1)
                 colnames(dfMaxDD) <- colnames(dfReturnsAssets)
                 rownames(dfMaxDD) <- "Worst Drawdown"
-            }
 
-            dfCurrDD <- Drawdowns(dfDailyReturnsAssets, invert = F) %>% tail(1) * 100
-            rownames(dfCurrDD) <- "Current Drawdown"
-            if(is.null(dim(dfCurrDD))) {
                 dim(dfCurrDD) <- c(1, 1)
                 colnames(dfCurrDD) <- colnames(dfReturnsAssets)
+                rownames(dfCurrDD) <- "Current Drawdown"
+
+                dim(dfRecovery) <- c(1, 1)
+                colnames(dfRecovery) <- colnames(dfReturnsAssets)
+                rownames(dfRecovery) <- "Recovery"
+
+            } else {
+                dfCurrDD <- Drawdowns(dfDailyReturnsAssets, invert = F) %>% tail(1) * 100
+                rownames(dfCurrDD) <- "Current Drawdown"
+
+                dfRecovery <- (dfCurrDD - dfMaxDD) * 100/(100 + dfMaxDD)
+                rownames(dfRecovery) <- "Recovery"
             }
 
             dfPerf <- table.AnnualizedReturns(dfReturnsAssets, scale=12, Rf=dfReturnsRiskFree)
             dfPerf[c(1,2),] <- dfPerf[c(1,2),] * 100
             rownames(dfPerf)[3] <- str_replace(row.names(dfPerf)[3], "Annualized ", "")
 
-            dfPerf <- rbind(dfPerf, dfMaxDD, dfCurrDD)
+            dfPerf <- rbind(dfPerf, dfMaxDD, dfCurrDD, dfRecovery)
             dfPerf <- format(round(dfPerf, digits = 2), justify = 'right', nsmall = 2, scientific = F)
             dfPerf[1,] <- paste0(dfPerf[1,], "%")
             dfPerf[2,] <- paste0(dfPerf[2,], "%")
             dfPerf[4,] <- paste0(dfPerf[4,], "%")
             dfPerf[5,] <- paste0(dfPerf[5,], "%")
+            dfPerf[6,] <- paste0(dfPerf[6,], "%")
 
             if(showReturnsOnly) {
                 dfPerf <- dfPerf %>% head(1)
+            } else if(!ishtmlOutput) {
+                dfPerf <- dfPerf %>% head(5)
             }
 
             if(str_detect(str_to_upper(yrs), "ALL")) rownames_prefix <- paste(firstYearMonth,"-",lastYearMonth)
