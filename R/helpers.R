@@ -106,7 +106,13 @@ getPerformanceMetrics <- function(dfDailyReturnsSub, dfMonthlyRiskFreeReturns) {
         as_tibble() %>%
         mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
-    dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfCurrDD, dfSkewness),
+    # recovery from bottom
+    dfRecovery <- dfWorstDD %>%
+        inner_join(dfCurrDD, by = "Symbol") %>%
+        mutate(Recovery = (CurrDD - WorstDD)/(1 + WorstDD)) %>%
+        select(Symbol, Recovery)
+
+    dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfCurrDD, dfRecovery, dfSkewness),
                      inner_join, by = "Symbol") %>%
         mutate(Sharpe = AnnualizedReturnExcess/AnnualizedStdDev,
                Sortino = AnnualizedReturnExcess/AnnualizedSemidev) %>%
