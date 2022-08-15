@@ -446,7 +446,7 @@ getDrawdowns <- function(dfReturns, colIndex=NA, colName, top=5) {
 
 #PRE: dfReturns is a data frame of monthly returns
 #POST: prints data frame of performance in each period in lPastYears list
-getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlOutput = FALSE, showReturnsOnly = FALSE) {
+getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlOutput = FALSE, showReturnsOnly = FALSE, showRecovery = FALSE) {
     dfReturns <- dfDailyReturns %>% getMonthlyReturns() %>% data.frame(row.names = 1) %>% na.omit()
 
     hasRiskFreeReturns <- FALSE
@@ -521,7 +521,7 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
 
             if(showReturnsOnly) {
                 dfPerf <- dfPerf %>% head(1)
-            } else if(!ishtmlOutput) {
+            } else if(!showRecovery) {
                 dfPerf <- dfPerf %>% head(5)
             }
 
