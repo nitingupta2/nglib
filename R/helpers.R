@@ -38,8 +38,11 @@ cumulativeReturnFromWorstDrawdown <- function(Z) {
         bottomIndex <- which.min(vDrawdowns)
 
         # exclude data prior to worst drawdown
-        Z <- Z[bottomIndex:numPeriods]
-        cumReturn <- exp(cumsum(log(1.0 + Z))) - 1.0
+        cumReturn <- 0.0
+        if(bottomIndex < numPeriods) {
+            Z <- Z[(bottomIndex + 1):numPeriods]
+            cumReturn <- (exp(cumsum(log(1.0 + Z))) - 1.0) %>% last()
+        }
         return(cumReturn)
     } else {
         return(NA_real_)
@@ -125,7 +128,7 @@ getPerformanceMetrics <- function(dfDailyReturnsSub, dfMonthlyRiskFreeReturns) {
 
     # recovery from bottom
     dfRecovery <- dfDailyReturnsSub %>%
-        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(cumulativeReturnFromWorstDrawdown(.x)) %>% last()) %>%
+        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(cumulativeReturnFromWorstDrawdown(.x))) %>%
         gather(Symbol, Recovery) %>%
         as_tibble() %>%
         mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
@@ -530,7 +533,7 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
                 rownames(dfCurrDD) <- "Current Drawdown"
 
                 dfRecovery <- dfDailyReturnsAssets %>%
-                    dplyr::summarise_if(is_bare_double, ~ suppressWarnings(cumulativeReturnFromWorstDrawdown(.x)) %>% last()) * 100
+                    dplyr::summarise_if(is_bare_double, ~ suppressWarnings(cumulativeReturnFromWorstDrawdown(.x))) * 100
                 rownames(dfRecovery) <- "From Bottom"
             }
 
