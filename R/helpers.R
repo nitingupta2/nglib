@@ -486,11 +486,20 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
     firstYearMonth <- paste(lubridate::month(firstDate, label=T, abbr=T),lubridate::year(firstDate))
     lastYearMonth <- paste(lubridate::month(lastDate, label=T, abbr=T),lubridate::year(lastDate))
 
-    ctr <- 1
     dfPerfFinal <- data.frame()
     numberOfMonths = nrow(dfReturns) ; numberOfAssets = ncol(dfReturns)
+    ctr <- 1
+    lPastMonths <- list()
     for(yrs in lPastYears) {
         if(str_detect(str_to_upper(yrs), "ALL")) mths = numberOfMonths else mths = yrs*12
+        lPastMonths[[ctr]] <- mths
+        ctr <- ctr + 1
+    }
+
+    # keep unique values only
+    lPastMonths <- unique(lPastMonths)
+    ctr <- 1
+    for(mths in lPastMonths) {
         if(numberOfMonths >= mths) {
             dfReturnsPast <- tail(dfReturns, n=mths)
 
