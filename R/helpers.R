@@ -30,6 +30,22 @@ annualizedSemiDeviation <- function(Z, series_scale = 12) {
     return(semidev)
 }
 
+cumulativeReturnFromBottom <- function(Z) {
+    Z <- na.omit(Z)
+    numPeriods <- length(Z)
+    if(numPeriods > 0) {
+        cumReturn <- cumsum(log(1.0 + Z))
+        bottomIndex <- which.min(cumReturn)
+
+        # remove prior data
+        Z <- Z[bottomIndex:numPeriods]
+        cumReturn <- exp(cumsum(log(1.0 + Z))) - 1.0
+        return(cumReturn)
+    } else {
+        return(NA_real_)
+    }
+}
+
 
 ## Return the date range starting and up to the point where all series have non NA values
 getAnalysisDateRange <- function(dfDailyReturns) {
@@ -108,10 +124,11 @@ getPerformanceMetrics <- function(dfDailyReturnsSub, dfMonthlyRiskFreeReturns) {
         mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
     # recovery from bottom
-    dfRecovery <- dfWorstDD %>%
-        inner_join(dfCurrDD, by = "Symbol") %>%
-        mutate(Recovery = (CurrDD - WorstDD)/(1 + WorstDD)) %>%
-        select(Symbol, Recovery)
+    dfRecovery <- dfDailyReturnsSub %>%
+        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(cumulativeReturnFromBottom(.x)) %>% last()) %>%
+        gather(Symbol, Recovery) %>%
+        as_tibble() %>%
+        mutate(Symbol = factor(Symbol, levels = levels(df$Symbol)))
 
     dfPerf <- reduce(list(dfAnlReturn, dfAnlReturnExcess, dfAnlStdev, dfSemiDev, dfWorstDD, dfCurrDD, dfRecovery, dfSkewness),
                      inner_join, by = "Symbol") %>%
@@ -505,14 +522,15 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
 
                 dim(dfRecovery) <- c(1, 1)
                 colnames(dfRecovery) <- colnames(dfReturnsAssets)
-                rownames(dfRecovery) <- "Recovery"
+                rownames(dfRecovery) <- "From Bottom"
 
             } else {
                 dfCurrDD <- dfDailyReturnsAssets %>%
                     dplyr::summarise_if(is_bare_double, ~ suppressWarnings(DrawdownPeak(.x, invert = F)) %>% last()) * 100
                 rownames(dfCurrDD) <- "Current Drawdown"
 
-                dfRecovery <- (dfCurrDD - dfMaxDD) * 100/(100 + dfMaxDD)
+                dfRecovery <- dfDailyReturnsAssets %>%
+                    dplyr::summarise_if(is_bare_double, ~ suppressWarnings(cumulativeReturnFromBottom(.x)) %>% last()) * 100
                 rownames(dfRecovery) <- "From Bottom"
             }
 
