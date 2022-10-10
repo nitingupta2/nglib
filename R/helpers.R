@@ -564,8 +564,10 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
                 dfPerf <- dfPerf %>% head(5)
             }
 
-            if(str_detect(str_to_upper(yrs), "ALL")) rownames_prefix <- paste(firstYearMonth,"-",lastYearMonth)
-            else rownames_prefix <- paste(firstYearMonthPast,"-",lastYearMonth)
+            # if(str_detect(str_to_upper(yrs), "ALL")) rownames_prefix <- paste(firstYearMonth,"-",lastYearMonth)
+            # else rownames_prefix <- paste(firstYearMonthPast,"-",lastYearMonth)
+
+            rownames_prefix <- paste(firstYearMonthPast,"-",lastYearMonth)
             rownames(dfPerf) <- paste(rownames_prefix,rownames(dfPerf))
 
             # add an empty line between performance segments
