@@ -455,7 +455,7 @@ getDrawdowns <- function(dfReturns, colIndex=NA, colName, top=5) {
         df <- data.frame(dfReturns[c("Date", colName)], row.names = 1)
     }
 
-    dfDrawdowns <- suppressWarnings(table.Drawdowns(df)) %>% as_tibble() %>%
+    dfDrawdowns <- suppressWarnings(table.Drawdowns(df), top = top) %>% as_tibble() %>%
         set_names(c("Peak","Trough","Recovery","Depth","Length","ToTrough","ToRecovery")) %>%
         mutate_at(.vars = c("Length","ToTrough","ToRecovery"), as.integer) %>%
         mutate(PeakDate = Peak, TroughDate = Trough, RecoveryDate = Recovery) %>%
