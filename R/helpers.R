@@ -318,6 +318,31 @@ getMonthlyReturns <- function(dfDailyReturns, removeNAs = T) {
     return(dfMonthlyReturns)
 }
 
+# Returns a data frame of weekly returns in the format: Date, <colname_initial> with weekend Sunday date,
+# from a data frame containing daily returns in the format:
+# Date, <colname_initial> OR <colname_initial> with Date in rownames
+getWeeklyReturns <- function(dfDailyReturns, removeNAs = T) {
+
+    if(ncol(dfDailyReturns)==1L) {
+        dfDailyReturns <- dfDailyReturns %>% rownames_to_column(var = "DailyDate")
+    }
+    else {
+        colnames(dfDailyReturns)[1] <- "DailyDate"
+    }
+
+    cumreturn <- function(Z) {if(sum(is.na(Z))==length(Z)) return(NA) else return(prod(1L + Z, na.rm = T) - 1L)}
+
+    dfWeeklyReturns <- dfDailyReturns %>%
+        mutate(WeeklyDate = ceiling_date(DailyDate, "week"))  %>%
+        group_by(WeeklyDate) %>%
+        dplyr::summarise_if(is_bare_double, list(cumreturn)) %>%
+        dplyr::rename(Date = WeeklyDate)
+
+    if(removeNAs) dfWeeklyReturns <- dfWeeklyReturns %>% drop_na()
+
+    return(dfWeeklyReturns)
+}
+
 
 # Returns a table of returns by calendar year
 getCalendarReturns <- function(dfReturns, as.perc = TRUE, digits = 1) {
