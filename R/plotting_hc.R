@@ -87,7 +87,7 @@ plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily
         firstPerfDate <- as.Date(first(dfReturns$Date))
         lastPerfDate <- as.Date(last(dfReturns$Date))
         plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
-        plotTitle <- paste(plotTitle, format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
+        plotCaption <- paste(format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
 
         df <- dfReturns %>% select(-Date)
     }
@@ -105,6 +105,7 @@ plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily
         hc_colorAxis(stops = NULL) %>%
         hc_colorAxis(min = -1, max = 1, stops = lColorStops, reversed = FALSE) %>%
         hc_title(text = plotTitle) %>%
+        hc_caption(text = plotCaption, align = "center") %>%
         hc_legend(align = "right", layout = "vertical", verticalAlign = "middle") %>%
         hc_plotOptions(series = list(dataLabels = list(enabled = TRUE, formatter = pointFormatter)))
 }
