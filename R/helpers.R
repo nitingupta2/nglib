@@ -249,23 +249,23 @@ getOHLCReturns <- function(symbol, startDownloadDate = "1965-01-01", endDownload
     }
 
     # check additional capital gains returns for mutual and index funds
-    if(isMutualOrIndexFund(symbol)) {
-        if(downloadCapGains) {
-            dfCapGains <- getCapitalGains(symbol)
-        } else {
-            print(paste("Reading capital gains data for", symbol))
-            dfCapGains <- dbReadCapitalGainsData(symbol)
-        }
-
-        if(nrow(dfCapGains) > 0) {
-            dfSymbol <- dfSymbol %>%
-                left_join(dfCapGains %>% select(-SecurityID), by = "Date") %>%
-                arrange(Date) %>%
-                mutate(CapitalReturn = CapitalGain/dplyr::lag(Close)) %>%
-                mutate(Return = Return + coalesce(CapitalReturn, 0)) %>%
-                select(-CapitalGain, -CapitalReturn)
-        }
-    }
+    # if(isMutualOrIndexFund(symbol)) {
+    #     if(downloadCapGains) {
+    #         dfCapGains <- getCapitalGains(symbol)
+    #     } else {
+    #         print(paste("Reading capital gains data for", symbol))
+    #         dfCapGains <- dbReadCapitalGainsData(symbol)
+    #     }
+    #
+    #     if(nrow(dfCapGains) > 0) {
+    #         dfSymbol <- dfSymbol %>%
+    #             left_join(dfCapGains %>% select(-SecurityID), by = "Date") %>%
+    #             arrange(Date) %>%
+    #             mutate(CapitalReturn = CapitalGain/dplyr::lag(Close)) %>%
+    #             mutate(Return = Return + coalesce(CapitalReturn, 0)) %>%
+    #             select(-CapitalGain, -CapitalReturn)
+    #     }
+    # }
 
     if(is.data.frame(dfSymbol)) dfOHLC <- dfSymbol
     return(dfOHLC)
