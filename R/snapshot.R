@@ -43,10 +43,10 @@ getSnapshot <- function(vSymbols) {
             mutate(Symbol = str_replace_all(Symbol, "\\.", "\\-")) %>%
             mutate(Change = ifelse(!is.na(Change), paste0(round(Change, 2),"%"), NA),
                    PE = round(PE, 2),
-                   PriceLow = round(PriceLow, 2),
-                   PriceHigh = round(PriceHigh, 2),
-                   YearlyPriceLow = round(YearlyPriceLow, 2),
-                   YearlyPriceHigh = round(YearlyPriceHigh, 2),
+                   PriceLow = sprintf("%.2f", round(PriceLow, 2)),
+                   PriceHigh = sprintf("%.2f", round(PriceHigh, 2)),
+                   YearlyPriceLow = sprintf("%.2f", round(YearlyPriceLow, 2)),
+                   YearlyPriceHigh = sprintf("%.2f", round(YearlyPriceHigh, 2)),
                    Yield = ifelse(!is.na(Yield), paste0(round(Yield, 4)*100, "%"), NA)) %>%
             unite(Range.Today, PriceLow, PriceHigh, sep = " - ") %>%
             unite(Range.52.weeks, YearlyPriceLow, YearlyPriceHigh, sep = " - ") %>%
