@@ -404,7 +404,8 @@ getRecessionIntervals <- function(dfReturns, dfRecessions) {
         full_join(dfRecessions, by = "Date") %>%
         filter(Date >= min(dfReturns$Date) & Date <= max(dfReturns$Date)) %>%
         arrange(Date) %>%
-        mutate(Recession = na.locf(Recession, na.rm = F)) %>%
+        fill(Recession, .direction = "down") %>%
+        # mutate(Recession = na.locf(Recession, na.rm = F)) %>%
         replace_na(list(Recession = 0)) %>%
         select(Date, Recession)
 

@@ -209,6 +209,59 @@ hc_tooltip_sorted_table <- function(hc, ...) {
     hc
 }
 
+
+# Plot interactive line chart
+plotLines_hc <- function(dfIndicators, dfRecessions = NULL, palette_name = "withgrey") {
+    # exclude incomplete rows
+    dfIndicators <- dfIndicators %>% drop_na()
+    vColNames <- names(dfIndicators)[-1]
+    vColNames <- gsub(" ", ".", vColNames)
+
+    # compute cumulative returns
+    xtIndicators <- timetk::tk_xts(dfIndicators, date_var = Date, silent = TRUE)
+
+    # line colors
+    vColors <- getPlotColors(palette_name, F, length(vColNames))
+
+    # Zoom buttons
+    lZoomButtons <- list(list(type = "ytd", text = "YTD"), list(type = "year", count = 1, text = "1y"),
+                         list(type = "year", count = 5, text = "5y"), list(type = "year", count = 10, text = "10y"),
+                         list(type = "year", count = 20, text = "20y"), list(type = "year", count = 50, text = "50y"),
+                         list(type = "all", text = "All"))
+
+    # tooltips
+    pointFormatter_perf <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
+                                  '<td style="text-align: right"><b>{point.y:.2f}%</b></td></tr>')
+
+    # plot cumulative returns
+    hcplot <- highchart(type = "stock") %>%
+        hc_chart(zoomType = "x") %>%
+        hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE,
+                         buttonTheme = list(states = list(select = list(fill = "#3C8DBC", style = list(color = "#FFFFFF"))))) %>%
+        hc_navigator(enabled = FALSE) %>%
+        hc_scrollbar(enabled = FALSE) %>%
+        hc_xAxis(type = "datetime", title = list(text = "")) %>%
+        hc_yAxis(type = "percent", labels = list(format = "{value}%"), opposite = FALSE) %>%
+        hc_legend(enabled = TRUE) %>%
+        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, sort = TRUE, table = TRUE,
+                   xDateFormat = "%b %Y",
+                   pointFormat = pointFormatter_perf)
+
+    for(i in seq_along(vColNames)) {
+        colName <- vColNames[i]
+        hcplot <- hcplot %>%
+            hc_add_series(xtIndicators[,colName], name = colName, marker = list(enabled = FALSE))
+    }
+    hcplot <- hcplot %>% hc_colors(vColors)
+
+    # add Recessions bands
+    if(!is.null(dfRecessions)) {
+        hcplot <- plotAddRecessions_hc(hcplot, dfIndicators, dfRecessions)
+    }
+    hcplot
+}
+
+
 # Plot interactive Returns chart
 plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("monthly", "daily", "weekly"), palette_name = "withgrey") {
     # exclude incomplete rows
