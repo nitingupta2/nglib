@@ -77,7 +77,7 @@ getSnapshot <- function(vSymbols) {
     dfSnapshot <- dfSnapshot %>%
         tk_tbl(preserve_index = F) %>%
         magrittr::set_colnames(vColNames) %>%
-        # mutate(Symbol = str_replace_all(vSymbols, "\\-", "\\.")) %>%
+        mutate(Symbol = str_replace_all(vSymbols, "\\-", "\\.")) %>%
         mutate(MarketCap = round(MarketCap/1000000000, 2)) %>%
         mutate(Change = ifelse(!is.na(Change), paste0(round(Change, 2),"%"), NA),
                PE = round(PE, 2),
