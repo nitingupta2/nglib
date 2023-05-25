@@ -70,14 +70,13 @@ getSnapshot <- function(vSymbols) {
                       "PE", "P/E Ratio",
                       "Yield", "Dividend Yield")
 
-    vColNames <- c("TradeTime", dfCols$internalQF)
+    vColNames <- c("Symbol", "TradeTime", dfCols$internalQF)
 
     dfSnapshot <- getQuote(vSymbols, what = yahooQF(dfCols$yahooQF))
 
     dfSnapshot <- dfSnapshot %>%
         tk_tbl(preserve_index = T) %>%
         magrittr::set_colnames(vColNames) %>%
-        # mutate(Symbol = str_replace_all(vSymbols, "\\-", "\\.")) %>%
         mutate(MarketCap = round(MarketCap/1000000000, 2)) %>%
         mutate(Change = ifelse(!is.na(Change), paste0(round(Change, 2),"%"), NA),
                PE = round(PE, 2),
