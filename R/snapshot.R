@@ -72,7 +72,7 @@ getSnapshot <- function(vSymbols) {
 
     vColNames <- c("Symbol", "TradeTime", dfCols$internalQF)
 
-    dfSnapshot <- getQuote(vSymbols, what = yahooQF(dfCols$yahooQF))
+    dfSnapshot <- getQuote(toupper(vSymbols), what = yahooQF(dfCols$yahooQF))
 
     dfSnapshot <- dfSnapshot %>%
         tk_tbl(preserve_index = T) %>%
