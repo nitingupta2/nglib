@@ -465,6 +465,7 @@ getCorrelations <- function(dfReturns, lPastYears=list('ALL'), strategyName) {
     vSymbols <- colnames(dfReturns[-1])
     dfCor <- getCorrelationsVerbose(dfReturns, lPastYears, strategyName) %>%
         select(time_frame, predictor, estimate) %>%
+        unique() %>%
         spread(predictor, estimate) %>%
         select(time_frame, any_of(vSymbols)) %>%
         data.frame(row.names = 1)
