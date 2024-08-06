@@ -285,26 +285,60 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("
     pointFormatter_perf <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
                                   '<td style="text-align: right"><b>${point.change:.2f}</b></td></tr>')
 
+    date_formatter <- ifelse(returnFrequency[1] == "daily", "%A, %b %e, %Y", "%b %Y")
+
+    tooltip_formatter <- sprintf("
+                function() {
+                    var s = '<b>' + Highcharts.dateFormat('%s', this.x) + '</b>';
+                    s += '<table>';
+
+                    var performancePoints = [];
+
+                    this.points.forEach(function(point) {
+                            performancePoints.push(point);
+                    });
+
+                    // Sort the performance points by change value
+                    performancePoints.sort(function(a, b) {
+                        return b.point.change - a.point.change;
+                    });
+
+                    if (performancePoints.length > 0) {
+                        s += '<tr><td colspan=\"2\" style=\"font-weight:bold\">Growth of $100:</td></tr>';
+                        performancePoints.forEach(function(point) {
+                            s += '<tr><td style=\"font-weight:bold; color:' + point.series.color + '\">' + point.series.name + ': </td>' +
+                                 '<td style=\"text-align: right\">' + (point.point.change.toFixed(2) ? ('$' + point.point.change.toFixed(2)) : point.y.toFixed(2)) + '</td></tr>';
+                        });
+                    }
+
+                    s += '</table>';
+                    return s;
+                }
+            ", date_formatter)
+
     # plot cumulative returns
-    hcplot <- highchart(type = "stock") %>%
+    hcplot <- highchart(type = "chart") %>%
         hc_chart(zoomType = "x") %>%
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE,
                          buttonTheme = list(states = list(select = list(fill = "#3C8DBC", style = list(color = "#FFFFFF"))))) %>%
         hc_navigator(enabled = FALSE) %>%
         hc_scrollbar(enabled = FALSE) %>%
         hc_xAxis(type = "datetime", title = list(text = "")) %>%
-        hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), opposite = FALSE) %>%
+        hc_yAxis(type = "logarithmic", title = list(text = "Growth of $100"), labels = list(format = "${value}"), showFirstLabel = FALSE, opposite = FALSE) %>%
         hc_legend(enabled = TRUE) %>%
-        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, sort = TRUE, table = TRUE,
-                   xDateFormat = ifelse(returnFrequency[1] == "daily", "%b %d, %Y", "%b %Y"),
-                   # headerFormat = "<center/>{point.key}<br><table>",
-                   pointFormat = pointFormatter_perf)
-        # hc_tooltip(shared = TRUE, split = FALSE, sort = TRUE, table = TRUE)
+        hc_tooltip(
+            shared = TRUE,
+            useHTML = TRUE,
+            formatter = JS(tooltip_formatter)
+        )
 
     for(i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
         hcplot <- hcplot %>%
-            hc_add_series(xtCumReturns[,strategyName], name = strategyName, compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
+            hc_add_series(xtCumReturns[,strategyName], name = strategyName,
+                          compare = "percent", compareBase = 100,
+                          tooltip = list(pointFormat = pointFormatter_perf),
+                          marker = list(enabled = FALSE))
     }
     hcplot <- hcplot %>% hc_colors(vColors)
 
