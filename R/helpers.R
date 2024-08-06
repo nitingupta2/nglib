@@ -563,31 +563,6 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
                 rownames(dfMaxDD) <- "Worst Drawdown"
             }
 
-            # dfCurrDD <- NA; dfRecovery <- NA
-            # dfMaxDD <- maxDrawdown(dfDailyReturnsAssets, invert = F) * 100
-            # if(is.null(dim(dfMaxDD))) {
-            #     dim(dfMaxDD) <- c(1, 1)
-            #     colnames(dfMaxDD) <- colnames(dfReturnsAssets)
-            #     rownames(dfMaxDD) <- "Worst Drawdown"
-            #
-            #     dim(dfCurrDD) <- c(1, 1)
-            #     colnames(dfCurrDD) <- colnames(dfReturnsAssets)
-            #     rownames(dfCurrDD) <- "Current Drawdown"
-            #
-            #     dim(dfRecovery) <- c(1, 1)
-            #     colnames(dfRecovery) <- colnames(dfReturnsAssets)
-            #     rownames(dfRecovery) <- "From Bottom"
-            #
-            # } else {
-            #     dfCurrDD <- dfDailyReturnsAssets %>%
-            #         dplyr::summarise_if(is_bare_double, ~ suppressWarnings(Drawdowns(.x, invert = F)) %>% last()) * 100
-            #     rownames(dfCurrDD) <- "Current Drawdown"
-            #
-            #     dfRecovery <- dfDailyReturnsAssets %>%
-            #         dplyr::summarise_if(is_bare_double, ~ suppressWarnings(cumulativeReturnFromWorstDrawdown(.x))) * 100
-            #     rownames(dfRecovery) <- "From Bottom"
-            # }
-
             dfPerf <- table.AnnualizedReturns(dfReturnsAssets, scale=12, Rf=dfReturnsRiskFree)
             dfPerf[c(1,2),] <- dfPerf[c(1,2),] * 100
             rownames(dfPerf)[3] <- str_replace(row.names(dfPerf)[3], "Annualized ", "")
@@ -605,9 +580,6 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
             } else if(!showRecovery) {
                 dfPerf <- dfPerf %>% head(5)
             }
-
-            # if(str_detect(str_to_upper(yrs), "ALL")) rownames_prefix <- paste(firstYearMonth,"-",lastYearMonth)
-            # else rownames_prefix <- paste(firstYearMonthPast,"-",lastYearMonth)
 
             rownames_prefix <- paste(firstYearMonthPast,"-",lastYearMonth)
             rownames(dfPerf) <- paste(rownames_prefix,rownames(dfPerf))

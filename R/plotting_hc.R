@@ -317,83 +317,214 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("
 
 
 # Plot interactive Performance chart
-plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("monthly", "daily", "weekly"), palette_name = "withgrey",
-                               plotTitle = "Cumulative Performance") {
-    # exclude incomplete rows
+plotPerformance_hc <- function(dfReturns, dfRecessions = NULL,
+                               returnFrequency = c("monthly", "daily", "weekly"),
+                               palette_name = "withgrey", plotTitle = "Cumulative Performance") {
+
     dfReturns <- dfReturns %>% drop_na()
     vStrategyNames <- names(dfReturns)[-1]
     vStrategyNames <- gsub(" ", ".", vStrategyNames)
 
-    # compute cumulative returns
-    dfCumReturns <- dfReturns %>% as_tibble() %>% mutate_if(is_bare_double, function(Z) exp(cumsum(log(1 + Z))))
+    dfCumReturns <- dfReturns %>% as_tibble() %>% mutate_if(is_bare_double,
+                                                            function(Z) exp(cumsum(log(1 + Z))))
     xtCumReturns <- timetk::tk_xts(dfCumReturns, date_var = Date, silent = TRUE)
 
-    # compute drawdowns
-    dfDrawdowns <- dfReturns %>%
-        as_tibble() %>%
+    dfDrawdowns <- dfReturns %>% as_tibble() %>%
         mutate_if(is_bare_double, function(Z) suppressWarnings(as.vector(timeSeries::drawdowns(timeSeries::as.timeSeries(Z))))) %>%
-        mutate_if(is_bare_double, function(Z) Z*100)
+        mutate_if(is_bare_double, function(Z) Z * 100)
     xtDrawdowns <- timetk::tk_xts(dfDrawdowns, date_var = Date, silent = TRUE)
 
-    # line colors
     vColors <- getPlotColors(palette_name, F, length(vStrategyNames))
+    lZoomButtons <- list(list(type = "ytd", text = "YTD"),
+                         list(type = "year", count = 1, text = "1y"),
+                         list(type = "year", count = 5, text = "5y"),
+                         list(type = "year", count = 10, text = "10y"),
+                         list(type = "year", count = 20, text = "20y"),
+                         list(type = "all", text = "All"))
 
-    # Zoom buttons
-    lZoomButtons <- list(list(type = "ytd", text = "YTD"), list(type = "year", count = 1, text = "1y"),
-                         list(type = "year", count = 5, text = "5y"), list(type = "year", count = 10, text = "10y"),
-                         list(type = "year", count = 20, text = "20y"), list(type = "all", text = "All"))
+    pointFormatter_perf <- paste0("<tr><td style=\"color: {series.color}; font-weight:bold\">{series.name}: </td>",
+                                  "<td style=\"text-align: right\"><b>${point.change:.2f}</b></td></tr>")
 
-    # tooltips
-    pointFormatter_perf <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
-                                  '<td style="text-align: right"><b>${point.change:.2f}</b></td></tr>')
-    pointFormatter_dd <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
-                                  '<td style="text-align: right"><b>{point.y:.2f}%</b></td></tr>')
+    pointFormatter_dd <- paste0("<tr><td style=\"color: {series.color}; font-weight:bold\">{series.name}: </td>",
+                                "<td style=\"text-align: right\"><b>{point.y:.2f}%</b></td></tr>")
 
-    # tooltip_format_perf <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>${point.change:.2f}</b><br/>"
-    # tooltip_format_dd <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>{point.y:.2f}%</b><br/>"
+    tooltip_formatter <- JS("
+                function() {
+                    var s = '<b>' + Highcharts.dateFormat('%A, %b %e, %Y', this.x) + '</b>';
+                    s += '<table>';
 
-    # plot cumulative returns and drawdowns
+                    var performancePoints = [];
+                    var drawdownPoints = [];
+
+                    this.points.forEach(function(point) {
+                        if (point.series.options.yAxis === 0) {
+                            performancePoints.push(point);
+                        } else if (point.series.options.yAxis === 1) {
+                            drawdownPoints.push(point);
+                        }
+                    });
+
+                    // Sort the performance points by change value
+                    performancePoints.sort(function(a, b) {
+                        return b.point.change - a.point.change;
+                    });
+
+                    // Sort the drawdown points by y value
+                    drawdownPoints.sort(function(a, b) {
+                        return b.y - a.y;
+                    });
+
+                    if (performancePoints.length > 0) {
+                        s += '<tr><td colspan=\"2\" style=\"font-weight:bold\">Growth of $100:</td></tr>';
+                        performancePoints.forEach(function(point) {
+                            s += '<tr><td style=\"font-weight:bold; color:' + point.series.color + '\">' + point.series.name + ': </td>' +
+                                 '<td style=\"text-align: right\">' + (point.point.change.toFixed(2) ? ('$' + point.point.change.toFixed(2)) : point.y.toFixed(2)) + '</td></tr>';
+                        });
+                    }
+
+                    if (drawdownPoints.length > 0) {
+                        s += '<tr><td colspan=\"2\" style=\"font-weight:bold\">Drawdowns:</td></tr>';
+                        drawdownPoints.forEach(function(point) {
+                            s += '<tr><td style=\"font-weight:bold; color:' + point.series.color + '\">' + point.series.name + ': </td>' +
+                                 '<td style=\"text-align: right\">' + point.y.toFixed(2) + '%</td></tr>';
+                        });
+                    }
+
+                    s += '</table>';
+                    return s;
+                }
+            ")
+
     hcplot <- highchart(type = "chart") %>%
         hc_chart(zoomType = "x") %>%
-        hc_yAxis_multiples(list(top="0%", height="70%", type="logarithmic", title=list(text="Growth of $100"), labels=list(format="${value}"),
-                                opposite=FALSE, showFirstLabel=FALSE),
-                           list(top="70%", height="30%", type="line", title=list(text="Drawdowns"), labels=list(format="{value}%"),
-                                opposite=TRUE)) %>%
+        hc_yAxis_multiples(
+            list(top = "0%", height = "70%", type = "logarithmic",
+                 title = list(text = "Growth of $100"), labels = list(format = "${value}"),
+                 opposite = FALSE, showFirstLabel = FALSE),
+            list(top = "70%", height = "30%", type = "line",
+                 title = list(text = "Drawdowns"), labels = list(format = "{value}%"), opposite = TRUE)
+        ) %>%
         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
         hc_xAxis(type = "datetime") %>%
-        hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, table = TRUE, sort = FALSE,
-                   xDateFormat = ifelse(returnFrequency[1] == "daily", "%b %d, %Y", "%b %Y")) %>%
+        hc_tooltip(
+            shared = TRUE,
+            useHTML = TRUE,
+            formatter = tooltip_formatter
+        ) %>%
         hc_title(text = plotTitle) %>%
         hc_legend(enabled = TRUE)
 
-    for(i in seq_along(vStrategyNames)) {
+    # Add cumulative returns series
+    for (i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
-        hcplot <- hcplot %>%
-            hc_add_series(xtCumReturns[,strategyName], yAxis = 0, name = strategyName, tooltip = list(pointFormat = pointFormatter_perf),
-                          id = glue::glue("{strategyName}_perf"), compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
+        hcplot <- hcplot %>% hc_add_series(
+            xtCumReturns[, strategyName],
+            yAxis = 0, name = strategyName,
+            tooltip = list(pointFormat = pointFormatter_perf),
+            id = glue::glue("{strategyName}_perf"),
+            compare = "percent", compareBase = 100,
+            marker = list(enabled = FALSE)
+        )
     }
-    for(i in seq_along(vStrategyNames)) {
-        new_pointFormatter_dd <- pointFormatter_dd
-        if(i == 1) {
-            new_pointFormatter_dd <- paste0('<tr><td style="color: grey; font-weight:bold">Drawdowns: </td>',
-                                            '<td style="text-align: right"></td></tr>',
-                                            new_pointFormatter_dd)
-        }
 
+    # Add drawdowns series
+    for (i in seq_along(vStrategyNames)) {
         strategyName <- vStrategyNames[i]
-        hcplot <- hcplot %>%
-            hc_add_series(xtDrawdowns[,strategyName], yAxis = 1, name = strategyName, tooltip = list(pointFormat = new_pointFormatter_dd),
-                          id = glue::glue("{strategyName}_dd"), linkedTo=glue::glue("{strategyName}_perf"),
-                          marker = list(enabled = FALSE))
+        hcplot <- hcplot %>% hc_add_series(
+            xtDrawdowns[, strategyName],
+            yAxis = 1, name = strategyName,
+            tooltip = list(pointFormat = pointFormatter_dd),
+            id = glue::glue("{strategyName}_dd"),
+            linkedTo = glue::glue("{strategyName}_perf"),
+            marker = list(enabled = FALSE)
+        )
     }
+
     hcplot <- hcplot %>% hc_colors(vColors)
 
-    # add Recessions bands
-    if(!is.null(dfRecessions)) {
+    if (!is.null(dfRecessions)) {
         hcplot <- plotAddRecessions_hc(hcplot, dfReturns, dfRecessions)
     }
+
     hcplot
 }
+# plotPerformance_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("monthly", "daily", "weekly"), palette_name = "withgrey",
+#                                plotTitle = "Cumulative Performance") {
+#     # exclude incomplete rows
+#     dfReturns <- dfReturns %>% drop_na()
+#     vStrategyNames <- names(dfReturns)[-1]
+#     vStrategyNames <- gsub(" ", ".", vStrategyNames)
+#
+#     # compute cumulative returns
+#     dfCumReturns <- dfReturns %>% as_tibble() %>% mutate_if(is_bare_double, function(Z) exp(cumsum(log(1 + Z))))
+#     xtCumReturns <- timetk::tk_xts(dfCumReturns, date_var = Date, silent = TRUE)
+#
+#     # compute drawdowns
+#     dfDrawdowns <- dfReturns %>%
+#         as_tibble() %>%
+#         mutate_if(is_bare_double, function(Z) suppressWarnings(as.vector(timeSeries::drawdowns(timeSeries::as.timeSeries(Z))))) %>%
+#         mutate_if(is_bare_double, function(Z) Z*100)
+#     xtDrawdowns <- timetk::tk_xts(dfDrawdowns, date_var = Date, silent = TRUE)
+#
+#     # line colors
+#     vColors <- getPlotColors(palette_name, F, length(vStrategyNames))
+#
+#     # Zoom buttons
+#     lZoomButtons <- list(list(type = "ytd", text = "YTD"), list(type = "year", count = 1, text = "1y"),
+#                          list(type = "year", count = 5, text = "5y"), list(type = "year", count = 10, text = "10y"),
+#                          list(type = "year", count = 20, text = "20y"), list(type = "all", text = "All"))
+#
+#     # tooltips
+#     pointFormatter_perf <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
+#                                   '<td style="text-align: right"><b>${point.change:.2f}</b></td></tr>')
+#     pointFormatter_dd <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
+#                                   '<td style="text-align: right"><b>{point.y:.2f}%</b></td></tr>')
+#
+#     # tooltip_format_perf <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>${point.change:.2f}</b><br/>"
+#     # tooltip_format_dd <- "<span style=\"color:{series.color};font-weight:bold\">{series.name}</span>: <b>{point.y:.2f}%</b><br/>"
+#
+#     # plot cumulative returns and drawdowns
+#     hcplot <- highchart(type = "chart") %>%
+#         hc_chart(zoomType = "x") %>%
+#         hc_yAxis_multiples(list(top="0%", height="70%", type="logarithmic", title=list(text="Growth of $100"), labels=list(format="${value}"),
+#                                 opposite=FALSE, showFirstLabel=FALSE),
+#                            list(top="70%", height="30%", type="line", title=list(text="Drawdowns"), labels=list(format="{value}%"),
+#                                 opposite=TRUE)) %>%
+#         hc_rangeSelector(buttons = lZoomButtons, enabled = TRUE) %>%
+#         hc_xAxis(type = "datetime") %>%
+#         hc_tooltip(shared = TRUE, split = FALSE, useHTML = TRUE, table = TRUE, sort = FALSE,
+#                    xDateFormat = ifelse(returnFrequency[1] == "daily", "%b %d, %Y", "%b %Y")) %>%
+#         hc_title(text = plotTitle) %>%
+#         hc_legend(enabled = TRUE)
+#
+#     for(i in seq_along(vStrategyNames)) {
+#         strategyName <- vStrategyNames[i]
+#         hcplot <- hcplot %>%
+#             hc_add_series(xtCumReturns[,strategyName], yAxis = 0, name = strategyName, tooltip = list(pointFormat = pointFormatter_perf),
+#                           id = glue::glue("{strategyName}_perf"), compare = "percent", compareBase = 100, marker = list(enabled = FALSE))
+#     }
+#     for(i in seq_along(vStrategyNames)) {
+#         new_pointFormatter_dd <- pointFormatter_dd
+#         if(i == 1) {
+#             new_pointFormatter_dd <- paste0('<tr><td style="color: grey; font-weight:bold">Drawdowns: </td>',
+#                                             '<td style="text-align: right"></td></tr>',
+#                                             new_pointFormatter_dd)
+#         }
+#
+#         strategyName <- vStrategyNames[i]
+#         hcplot <- hcplot %>%
+#             hc_add_series(xtDrawdowns[,strategyName], yAxis = 1, name = strategyName, tooltip = list(pointFormat = new_pointFormatter_dd),
+#                           id = glue::glue("{strategyName}_dd"), linkedTo=glue::glue("{strategyName}_perf"),
+#                           marker = list(enabled = FALSE))
+#     }
+#     hcplot <- hcplot %>% hc_colors(vColors)
+#
+#     # add Recessions bands
+#     if(!is.null(dfRecessions)) {
+#         hcplot <- plotAddRecessions_hc(hcplot, dfReturns, dfRecessions)
+#     }
+#     hcplot
+# }
 
 
 # add Recession bands to highstock chart
