@@ -283,7 +283,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("
 
     # tooltips
     pointFormatter_perf <- paste0('<tr><td style="color: {series.color}; font-weight:bold">{series.name}: </td>',
-                                  '<td style="text-align: right"><b>${point.change:.2f}</b></td></tr>')
+                                  '<td style="text-align: right"><b>${point.change:.0f}</b></td></tr>')
 
     date_formatter <- ifelse(returnFrequency[1] == "daily", "%A, %b %e, %Y", "%b %Y")
 
@@ -307,7 +307,7 @@ plotReturns_hc <- function(dfReturns, dfRecessions = NULL, returnFrequency = c("
                         s += '<tr><td colspan=\"2\" style=\"font-weight:bold\">Growth of $100:</td></tr>';
                         performancePoints.forEach(function(point) {
                             s += '<tr><td style=\"font-weight:bold; color:' + point.series.color + '\">' + point.series.name + ': </td>' +
-                                 '<td style=\"text-align: right\">' + (point.point.change.toFixed(2) ? ('$' + point.point.change.toFixed(2)) : point.y.toFixed(2)) + '</td></tr>';
+                                 '<td style=\"text-align: right\">' + (point.point.change.toFixed(0) ? ('$' + point.point.change.toFixed(0)) : point.y.toFixed(0)) + '</td></tr>';
                         });
                     }
 
@@ -377,7 +377,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL,
                          list(type = "all", text = "All"))
 
     pointFormatter_perf <- paste0("<tr><td style=\"color: {series.color}; font-weight:bold\">{series.name}: </td>",
-                                  "<td style=\"text-align: right\"><b>${point.change:.2f}</b></td></tr>")
+                                  "<td style=\"text-align: right\"><b>${point.change:.0f}</b></td></tr>")
 
     pointFormatter_dd <- paste0("<tr><td style=\"color: {series.color}; font-weight:bold\">{series.name}: </td>",
                                 "<td style=\"text-align: right\"><b>{point.y:.2f}%</b></td></tr>")
@@ -412,7 +412,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL,
                         s += '<tr><td colspan=\"2\" style=\"font-weight:bold\">Growth of $100:</td></tr>';
                         performancePoints.forEach(function(point) {
                             s += '<tr><td style=\"font-weight:bold; color:' + point.series.color + '\">' + point.series.name + ': </td>' +
-                                 '<td style=\"text-align: right\">' + (point.point.change.toFixed(2) ? ('$' + point.point.change.toFixed(2)) : point.y.toFixed(2)) + '</td></tr>';
+                                 '<td style=\"text-align: right\">' + (point.point.change.toFixed(0) ? ('$' + point.point.change.toFixed(0)) : point.y.toFixed(0)) + '</td></tr>';
                         });
                     }
 
