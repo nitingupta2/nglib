@@ -359,8 +359,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL,
     vStrategyNames <- names(dfReturns)[-1]
     vStrategyNames <- gsub(" ", ".", vStrategyNames)
 
-    dfCumReturns <- dfReturns %>% as_tibble() %>% mutate_if(is_bare_double,
-                                                            function(Z) exp(cumsum(log(1 + Z))))
+    dfCumReturns <- dfReturns %>% as_tibble() %>% mutate_if(is_bare_double, function(Z) exp(cumsum(log(1 + Z))))
     xtCumReturns <- timetk::tk_xts(dfCumReturns, date_var = Date, silent = TRUE)
 
     dfDrawdowns <- dfReturns %>% as_tibble() %>%
@@ -382,7 +381,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL,
     pointFormatter_dd <- paste0("<tr><td style=\"color: {series.color}; font-weight:bold\">{series.name}: </td>",
                                 "<td style=\"text-align: right\"><b>{point.y:.2f}%</b></td></tr>")
 
-    tooltip_formatter <- JS("
+    tooltip_formatter <- sprintf("
                 function() {
                     var s = '<b>' + Highcharts.dateFormat('%A, %b %e, %Y', this.x) + '</b>';
                     s += '<table>';
@@ -443,7 +442,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL,
         hc_tooltip(
             shared = TRUE,
             useHTML = TRUE,
-            formatter = tooltip_formatter
+            formatter = JS(tooltip_formatter)
         ) %>%
         hc_title(text = plotTitle) %>%
         hc_legend(enabled = TRUE)
