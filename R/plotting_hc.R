@@ -381,7 +381,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL,
     pointFormatter_dd <- paste0("<tr><td style=\"color: {series.color}; font-weight:bold\">{series.name}: </td>",
                                 "<td style=\"text-align: right\"><b>{point.y:.2f}%</b></td></tr>")
 
-    tooltip_formatter <- sprintf("
+    tooltip_formatter <- paste0("
                 function() {
                     var s = '<b>' + Highcharts.dateFormat('%A, %b %e, %Y', this.x) + '</b>';
                     s += '<table>';
