@@ -227,18 +227,28 @@ getCapitalGains <- function(symbol, startDownloadDate = "1971-01-01", endDownloa
 
 
 getOHLCReturns <- function(symbol, startDownloadDate = "1965-01-01", endDownloadDate = Sys.Date(), downloadCapGains = T) {
-    print(paste("Downloading data for", symbol))
 
     dfOHLC <- NULL
     if(str_detect(symbol, "/")) {
-        dfSymbol <- Quandl::Quandl(symbol, start_date = startDownloadDate, end_date = endDownloadDate, collapse = "daily", order = "asc")
-        dfSymbol <- dfSymbol %>%
-            select(Date = 1, Adjusted = 2) %>%
+        print(paste("Reading data for", symbol))
+        dfSymbol <- dbReadQueryData(sprintf("SELECT * FROM EquitiesData WHERE SecurityID = '%s';", symbol)) %>%
+            select(Date = DailyDate, Adjusted = PriceAdjClose) %>%
             as_tibble() %>%
+            mutate(Date = as.Date(Date)) %>%
             mutate(Open=NA_real_, High=NA_real_, Low=NA_real_, Close=NA_real_, Volume=NA_real_) %>%
-            select(Date, Open:Volume, Adjusted) %>%
+            mutate(Symbol = symbol) %>%
+            select(Symbol, Date, Open:Volume, Adjusted) %>%
             tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
+
+        # dfSymbol <- Quandl::Quandl(symbol, start_date = startDownloadDate, end_date = endDownloadDate, collapse = "daily", order = "asc")
+        # dfSymbol <- dfSymbol %>%
+        #     select(Date = 1, Adjusted = 2) %>%
+        #     as_tibble() %>%
+        #     mutate(Open=NA_real_, High=NA_real_, Low=NA_real_, Close=NA_real_, Volume=NA_real_) %>%
+        #     select(Date, Open:Volume, Adjusted) %>%
+        #     tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
     } else {
+        print(paste("Downloading data for", symbol))
         dfSymbol <- tq_get(symbol, get = "stock.prices", from = startDownloadDate, to = endDownloadDate)
         if(is.data.frame(dfSymbol)) {
             dfSymbol <- dfSymbol %>%
@@ -272,7 +282,7 @@ getOHLCReturns <- function(symbol, startDownloadDate = "1965-01-01", endDownload
 }
 
 
-# Download daily returns from Yahoo Finance or Quandl
+# Download daily returns from Yahoo Finance or Quandl (deprecated)
 getDailyReturns <- function(symbol, symbolPrior = NA, startDownloadDate = "1965-01-01", downloadCapGains = T) {
     dfSymbol <- getOHLCReturns(symbol, startDownloadDate = startDownloadDate, downloadCapGains = downloadCapGains)
 
