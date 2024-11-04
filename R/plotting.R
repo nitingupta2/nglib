@@ -326,9 +326,13 @@ plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", 
         df <- dfReturns %>% select(-Date)
     }
 
-    dfCor <- cor(df) %>%
+    mCor <- cor(df) %>%
         round(digits = 2) %>%
-        reorderCorrelationMatrix() %>%
+        reorderCorrelationMatrix()
+
+    diag(mCor) <- NA
+
+    dfCor <- mCor %>%
         tk_tbl(rename_index = "Var1") %>%
         gather(Var2, CorVal, -Var1) %>%
         mutate(Var1 = fct_inorder(Var1),

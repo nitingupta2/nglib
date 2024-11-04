@@ -96,8 +96,14 @@ plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily
 
     mCor <- cor(df)
     mCor <- reorderCorrelationMatrix(mCor)
+    diag(mCor) <- 0
 
-    pointFormatter <- JS("function(){ return Highcharts.numberFormat(this.point.value, 2); }")
+    # pointFormatter <- JS("function(){ return Highcharts.numberFormat(this.point.value, 2); }")
+    pointFormatter <- JS("
+        function() {
+            return (this.point.value === 0) ? '' : Highcharts.numberFormat(this.point.value, 2);
+        }
+    ")
 
     lColorStops <- list(list(0, "#D11141"),
                         list(0.5, "#F8F5F5"),
