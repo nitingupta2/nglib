@@ -348,7 +348,7 @@ plotCorrelations <- function(dfReturns, returnFrequency = c("monthly", "daily", 
         theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
         theme(plot.title=element_text(hjust = 0.5, vjust = 1, size=12)) +
         coord_fixed() +
-        geom_text(aes(Var1, Var2, label = CorVal), color = "black", size = 3)
+        geom_text(aes(Var1, Var2, label = ifelse(is.na(CorVal), "", CorVal)), color = "black", size = 3)
 
     if(!is.na(outlineVar) & outlineVar %in% as.character(dfCor$Var1)) {
         dfOutline <- dfCor %>% dplyr::filter(Var1 == outlineVar)
