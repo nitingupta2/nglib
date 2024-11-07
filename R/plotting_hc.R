@@ -79,43 +79,106 @@ plotPortfolioWeights_hc <- function(dfWeights, plotTitle = "Portfolio Weights") 
 
 
 # Plot interactive Correlations chart
+# plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly"), plotTitle = NULL) {
+#
+#     df <- dfReturns
+#     plotCaption <- ""
+#     if("Date" %in% colnames(df)) {
+#         df <- df %>% select(-Date)
+#         firstPerfDate <- as.Date(first(dfReturns$Date))
+#         lastPerfDate <- as.Date(last(dfReturns$Date))
+#         plotCaption <- paste(format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
+#     }
+#
+#     if(is.null(plotTitle)) {
+#         plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
+#     }
+#
+#     mCor <- cor(df)
+#     mCor <- reorderCorrelationMatrix(mCor)
+#     diag(mCor) <- 0
+#
+#     pointFormatter <- JS("function(){ return Highcharts.numberFormat(this.point.value, 2); }")
+#
+#     lColorStops <- list(list(0, "#D11141"),
+#                         list(0.5, "#F8F5F5"),
+#                         list(1, "#00AEDB"))
+#
+#     hchart(mCor) %>%
+#         hc_colorAxis(stops = NULL) %>%
+#         hc_colorAxis(min = -1, max = 1, stops = lColorStops, reversed = FALSE) %>%
+#         hc_title(text = plotTitle) %>%
+#         hc_caption(text = plotCaption, align = "center") %>%
+#         hc_legend(align = "right", layout = "vertical", verticalAlign = "middle") %>%
+#         hc_plotOptions(series = list(dataLabels = list(enabled = TRUE, formatter = pointFormatter)))
+# }
 plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily", "weekly"), plotTitle = NULL) {
+    library(dplyr)
+    library(highcharter)
+    library(glue)
 
     df <- dfReturns
     plotCaption <- ""
-    if("Date" %in% colnames(df)) {
+
+    # Set the caption if Date column exists
+    if ("Date" %in% colnames(df)) {
         df <- df %>% select(-Date)
         firstPerfDate <- as.Date(first(dfReturns$Date))
         lastPerfDate <- as.Date(last(dfReturns$Date))
-        plotCaption <- paste(format(firstPerfDate,"%b %Y"), "-", format(lastPerfDate,"%b %Y"))
+        plotCaption <- paste(format(firstPerfDate, "%b %Y"), "-", format(lastPerfDate, "%b %Y"))
     }
 
-    if(is.null(plotTitle)) {
+    # Set the title if not provided
+    if (is.null(plotTitle)) {
         plotTitle <- str_to_title(glue::glue("Correlations of {returnFrequency[1]} Returns"))
     }
 
+    # Calculate correlation matrix and reorder it
     mCor <- cor(df)
     mCor <- reorderCorrelationMatrix(mCor)
-    diag(mCor) <- 0
 
-    # pointFormatter <- JS("function(){ return Highcharts.numberFormat(this.point.value, 2); }")
+    # Set diagonal values to 1.1 to represent them as a unique color
+    diag(mCor) <- 1.1
+
+    # Define color stops, with 1.1 mapped to gray
+    lColorStops <- list(
+        list(0, "#D11141"),    # Red for negative correlations
+        list(0.5, "#F8F5F5"),  # White for zero correlation
+        list(1, "#00AEDB"),    # Blue for positive correlations
+        list(1.1, "grey")   # Gray for diagonal cells
+    )
+
+    # JavaScript formatter to hide text on diagonal cells
     pointFormatter <- JS("
         function() {
-            return (this.point.value === 0) ? '' : Highcharts.numberFormat(this.point.value, 2);
+            return (this.point.value === 1.1) ? '' : Highcharts.numberFormat(this.point.value, 2);
         }
     ")
 
-    lColorStops <- list(list(0, "#D11141"),
-                        list(0.5, "#F8F5F5"),
-                        list(1, "#00AEDB"))
+    tooltipFormatter <- JS("
+        function() {
+            return (this.point.x === this.point.y) ?
+            (this.series.yAxis.categories[this.point.x] + ' ~ ' + this.series.xAxis.categories[this.point.y] + ': 1.00') :
+            (this.series.yAxis.categories[this.point.x] + ' ~ ' + this.series.xAxis.categories[this.point.y] + ': ' +
+            Highcharts.numberFormat(this.point.value, 2));
+        }
+    ")
 
-    hchart(mCor) %>%
-        hc_colorAxis(stops = NULL) %>%
-        hc_colorAxis(min = -1, max = 1, stops = lColorStops, reversed = FALSE) %>%
+
+    # Generate the heatmap
+    hchart(mCor, "heatmap") %>%
+        hc_colorAxis(
+            type = "linear",
+            min = -1,
+            max = 1,  # Extend max to 1.1 to include diagonal cells
+            stops = lColorStops,
+            reversed = FALSE
+        ) %>%
         hc_title(text = plotTitle) %>%
         hc_caption(text = plotCaption, align = "center") %>%
         hc_legend(align = "right", layout = "vertical", verticalAlign = "middle") %>%
-        hc_plotOptions(series = list(dataLabels = list(enabled = TRUE, formatter = pointFormatter)))
+        hc_plotOptions(series = list(dataLabels = list(enabled = TRUE, formatter = pointFormatter))) %>%
+        hc_tooltip(formatter = tooltipFormatter)
 }
 
 
