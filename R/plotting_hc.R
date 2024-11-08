@@ -158,8 +158,8 @@ plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily
     tooltipFormatter <- JS("
         function() {
             return (this.point.x === this.point.y) ?
-            (this.series.yAxis.categories[this.point.x] + ' ~ ' + this.series.xAxis.categories[this.point.y] + ': 1.00') :
-            (this.series.yAxis.categories[this.point.x] + ' ~ ' + this.series.xAxis.categories[this.point.y] + ': ' +
+            (this.series.yAxis.categories[this.point.y] + ' ~ ' + this.series.xAxis.categories[this.point.x] + ': 1.00') :
+            (this.series.yAxis.categories[this.point.y] + ' ~ ' + this.series.xAxis.categories[this.point.x] + ': ' +
             Highcharts.numberFormat(this.point.value, 2));
         }
     ")
