@@ -138,20 +138,20 @@ plotCorrelations_hc <- function(dfReturns, returnFrequency = c("monthly", "daily
     mCor <- reorderCorrelationMatrix(mCor)
 
     # Set diagonal values to 1.1 to represent them as a unique color
-    diag(mCor) <- 1.1
+    diag(mCor) <- 1.01
 
     # Define color stops, with 1.1 mapped to gray
     lColorStops <- list(
         list(0, "#D11141"),    # Red for negative correlations
         list(0.5, "#F8F5F5"),  # White for zero correlation
         list(1, "#00AEDB"),    # Blue for positive correlations
-        list(1.1, "grey")   # Gray for diagonal cells
+        list(1.01, "grey")   # Gray for diagonal cells
     )
 
     # JavaScript formatter to hide text on diagonal cells
     pointFormatter <- JS("
         function() {
-            return (this.point.value === 1.1) ? '' : Highcharts.numberFormat(this.point.value, 2);
+            return (this.point.value === 1.01) ? '' : Highcharts.numberFormat(this.point.value, 2);
         }
     ")
 
