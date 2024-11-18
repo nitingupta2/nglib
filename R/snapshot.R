@@ -62,6 +62,7 @@ getSnapshot <- function(vSymbols) {
                       "Name", "Name (Long)",
                       "Last", "Last Trade (Price Only)",
                       "Change", "Change in Percent",
+                      "Volume", "Volume",
                       "PriceLow", "Days Low",
                       "PriceHigh", "Days High",
                       "YearlyPriceLow", "52-week Low",
@@ -77,7 +78,9 @@ getSnapshot <- function(vSymbols) {
     dfSnapshot <- dfSnapshot %>%
         tk_tbl(preserve_index = T) %>%
         magrittr::set_colnames(vColNames) %>%
-        mutate(MarketCap = round(MarketCap/1000000000, 2)) %>%
+        mutate(TradeTime = strftime(TradeTime, "%m/%d %H:%M:%S")) %>%
+        mutate(MarketCap = round(MarketCap/1e9, 2)) %>%
+        mutate(Volume = round(Volume/1e6, 2)) %>%
         mutate(Change = ifelse(!is.na(Change), paste0(round(Change, 2),"%"), NA),
                PE = round(PE, 2),
                PriceLow = sprintf("%.2f", round(PriceLow, 2)),
