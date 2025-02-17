@@ -165,7 +165,7 @@ dbWriteEquitiesData <- function(df, tableName = "EquitiesData") {
 # write Risk Free Rates Data
 dbWriteRiskFreeRatesData <- function(df, tableName = "RiskFreeRatesData") {
     # set colnames as in database table
-    vTblHeader <- c("SecurityID","DailyDate","DailyReturn")
+    vTblHeader <- c("SecurityID","DailyDate","DailyReturn","AnnualReturn")
     colnames(df) <- vTblHeader
 
     # cast variables to datatypes as in database table
@@ -181,8 +181,8 @@ dbWriteRiskFreeRatesData <- function(df, tableName = "RiskFreeRatesData") {
     print(paste("Merging", nrow(df), "rows to", tableName))
 
     # Create a temporary table
-    colTypes <- c("varchar(10)","date","decimal(13,12)")
-    names(colTypes) <- c("SecurityID","DailyDate","DailyReturn")
+    colTypes <- c("varchar(10)","date","decimal(13,12)","decimal(6,4)")
+    names(colTypes) <- c("SecurityID","DailyDate","DailyReturn","AnnualReturn")
 
     sqlSave(dbhandle, df, tablename = "tempTbl", rownames = F, safer = T, test = F, verbose = F, varTypes = colTypes)
 

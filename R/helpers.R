@@ -120,7 +120,7 @@ getPerformanceMetrics <- function(dfDailyReturnsSub, dfMonthlyRiskFreeReturns) {
 
     # summarise current drawdown on daily returns
     dfCurrDD <- dfDailyReturnsSub %>%
-        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(Drawdowns(.x, invert = F)) %>% last()) %>%
+        dplyr::summarise_if(is_bare_double, ~ suppressWarnings(Drawdowns(.x, invert = F)) %>% na.locf() %>% last()) %>%
         gather(Symbol, CurrDD) %>%
         mutate(CurrDD = as.numeric(CurrDD)) %>%
         as_tibble() %>%
@@ -235,6 +235,7 @@ getOHLCReturns <- function(symbol, startDownloadDate = "1965-01-01", endDownload
             select(Date = DailyDate, Adjusted = PriceAdjClose) %>%
             as_tibble() %>%
             mutate(Date = as.Date(Date)) %>%
+            arrange(Date) %>%
             mutate(Open=NA_real_, High=NA_real_, Low=NA_real_, Close=NA_real_, Volume=NA_real_) %>%
             mutate(Symbol = symbol) %>%
             select(Symbol, Date, Open:Volume, Adjusted) %>%
@@ -561,7 +562,7 @@ getLatestPerformance <- function(dfDailyReturns, lPastYears=list('ALL'), ishtmlO
             dfCurrDD <- NA; dfRecovery <- NA
             dfMaxDD <- maxDrawdown(dfDailyReturnsAssets, invert = F) * 100
             dfCurrDD <- dfDailyReturnsAssets %>%
-                dplyr::summarise_if(is_bare_double, ~ suppressWarnings(Drawdowns(.x, invert = F)) %>% last()) * 100
+                dplyr::summarise_if(is_bare_double, ~ suppressWarnings(Drawdowns(.x, invert = F)) %>% na.locf() %>% last()) * 100
             rownames(dfCurrDD) <- "Current Drawdown"
 
             dfRecovery <- dfDailyReturnsAssets %>%
