@@ -647,8 +647,7 @@ getDateBreaks <- function(vDates) {
 
 # get Risk Free Symbols
 getRiskFreeRatesSymbols <- function() {
-    return(c("LIBAUD","LIBGBP","LIBCAD","LIBCHF","LIBEUR","LIBJPY","LIBUSD","LIBOR.USD","SARINR",
-             "TBILLS","TBills","Tbills","TBILL_3M","Cash","CASH","Margin","MARGIN"))
+    return(c("IND90D","TBILLS","TBills","Cash","CASH","Margin","MARGIN"))
 }
 
 # get Futures Symbols
