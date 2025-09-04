@@ -240,14 +240,6 @@ getOHLCReturns <- function(symbol, startDownloadDate = "1965-01-01", endDownload
             mutate(Symbol = symbol) %>%
             select(Symbol, Date, Open:Volume, Adjusted) %>%
             tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
-
-        # dfSymbol <- Quandl::Quandl(symbol, start_date = startDownloadDate, end_date = endDownloadDate, collapse = "daily", order = "asc")
-        # dfSymbol <- dfSymbol %>%
-        #     select(Date = 1, Adjusted = 2) %>%
-        #     as_tibble() %>%
-        #     mutate(Open=NA_real_, High=NA_real_, Low=NA_real_, Close=NA_real_, Volume=NA_real_) %>%
-        #     select(Date, Open:Volume, Adjusted) %>%
-        #     tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
     } else {
         print(paste("Downloading data for", symbol))
         dfSymbol <- tq_get(symbol, get = "stock.prices", from = startDownloadDate, to = endDownloadDate)
@@ -258,25 +250,6 @@ getOHLCReturns <- function(symbol, startDownloadDate = "1965-01-01", endDownload
                 tq_mutate(select = Adjusted, mutate_fun = Delt, col_rename = "Return")
         }
     }
-
-    # check additional capital gains returns for mutual and index funds
-    # if(isMutualOrIndexFund(symbol)) {
-    #     if(downloadCapGains) {
-    #         dfCapGains <- getCapitalGains(symbol)
-    #     } else {
-    #         print(paste("Reading capital gains data for", symbol))
-    #         dfCapGains <- dbReadCapitalGainsData(symbol)
-    #     }
-    #
-    #     if(nrow(dfCapGains) > 0) {
-    #         dfSymbol <- dfSymbol %>%
-    #             left_join(dfCapGains %>% select(-SecurityID), by = "Date") %>%
-    #             arrange(Date) %>%
-    #             mutate(CapitalReturn = CapitalGain/dplyr::lag(Close)) %>%
-    #             mutate(Return = Return + coalesce(CapitalReturn, 0)) %>%
-    #             select(-CapitalGain, -CapitalReturn)
-    #     }
-    # }
 
     if(is.data.frame(dfSymbol)) dfOHLC <- dfSymbol
     return(dfOHLC)
