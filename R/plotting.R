@@ -33,7 +33,7 @@ plotPerformance <- function(dfReturns, dfRecessions=NULL, plotMainTitle=NA, plot
     if(is.null(legendPosition)) legendPosition <- c(0,1)
 
     # calculate cumulative returns
-    dfCumReturns <- dfReturns %>%
+    dfCumReturns <- dfReturns %>% as_tibble() %>%
         mutate_if(is_bare_double, function(Z) exp(cumsum(log(1 + Z)))) %>%
         mutate(Date = as.Date(Date)) %>%
         gather(Security, CumReturn, -Date) %>%
@@ -41,13 +41,21 @@ plotPerformance <- function(dfReturns, dfRecessions=NULL, plotMainTitle=NA, plot
         arrange(Date)
 
     # compute drawdowns
-    dfDrawdowns <- dfReturns %>%
-        mutate_if(is_bare_double, function(Z) suppressWarnings(as.vector(timeSeries::drawdowns(timeSeries::as.timeSeries(Z))))) %>%
+    dfDrawdowns <- dfReturns %>% as_tibble() %>%
+        mutate_if(is_bare_double, function(Z) suppressWarnings(as.vector(PerformanceAnalytics::Drawdowns(Z)))) %>%
         mutate(Date = as.Date(Date)) %>%
         gather(Security, Drawdown, -Date) %>%
         mutate(Drawdown = as.numeric(Drawdown)) %>%
         mutate(Security = factor(Security, levels = vStrategyNames)) %>%
         arrange(Date)
+
+    # dfDrawdowns <- dfReturns %>% as_tibble() %>%
+    #     mutate_if(is_bare_double, function(Z) suppressWarnings(as.vector(timeSeries::drawdowns(timeSeries::as.timeSeries(Z))))) %>%
+    #     mutate(Date = as.Date(Date)) %>%
+    #     gather(Security, Drawdown, -Date) %>%
+    #     mutate(Drawdown = as.numeric(Drawdown)) %>%
+    #     mutate(Security = factor(Security, levels = vStrategyNames)) %>%
+    #     arrange(Date)
 
     # plot cumulative returns
     plotPerf <- ggplot(dfCumReturns)

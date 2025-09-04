@@ -398,7 +398,7 @@ plotPerformance_hc <- function(dfReturns, dfRecessions = NULL,
     xtCumReturns <- timetk::tk_xts(dfCumReturns, date_var = Date, silent = TRUE)
 
     dfDrawdowns <- dfReturns %>% as_tibble() %>%
-        mutate_if(is_bare_double, function(Z) suppressWarnings(as.vector(timeSeries::drawdowns(timeSeries::as.timeSeries(Z))))) %>%
+        mutate_if(is_bare_double, function(Z) suppressWarnings(as.vector(PerformanceAnalytics::Drawdowns(Z)))) %>%
         mutate_if(is_bare_double, function(Z) Z * 100)
     xtDrawdowns <- timetk::tk_xts(dfDrawdowns, date_var = Date, silent = TRUE)
 
