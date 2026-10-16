@@ -1,0 +1,16 @@
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+.Renviron
+.Rprofile
+.httr-oauth
+*.tar.gz
+*.Rcheck/
+check-out*/
+temp/
+tmp/
+.DS_Store
+Thumbs.db
+.positai
+.claude/
