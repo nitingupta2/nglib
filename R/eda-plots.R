@@ -577,3 +577,414 @@ eda_plot_correlation_matrix <- function(dfInput, outlineVar = NA, plotTitle = "C
 
     return(p)
 }
+
+
+#' Correlations of numerical features with a target
+#'
+#' MULTIVARIATE (numerical): horizontal bars of the correlation of every
+#' other numerical column with `feature_y`, sorted by value and labelled.
+#' Negative correlations are red and positive ones blue, as in the `heatmap`
+#' palette. Use this when a full correlation matrix has too many features to
+#' read. Correlations use pairwise-complete observations; features whose
+#' correlation is undefined (e.g. constant columns) are dropped.
+#'
+#' @inheritParams eda_plot_scatter
+#' @param method Correlation method, `"pearson"` or `"spearman"`.
+#' @param minAbsCor Only show features whose absolute correlation is at
+#'   least this.
+#' @param nTop If not `NULL`, only show the `nTop` features with the largest
+#'   absolute correlation.
+#' @param plotTitle Plot title. If `NULL`, a title naming the method and
+#'   `feature_y` is used.
+#'
+#' @return A ggplot object, or invisibly `NULL` with a message if no feature
+#'   is left to plot.
+#' @family EDA plots
+#' @export
+#'
+#' @examples
+#' eda_plot_target_correlations(mtcars, "mpg")
+#' eda_plot_target_correlations(ggplot2::diamonds, "price", method = "spearman")
+eda_plot_target_correlations <- function(dfInput, feature_y, method = c("pearson", "spearman"),
+                                         minAbsCor = 0, nTop = NULL, plotTitle = NULL) {
+    method <- match.arg(method)
+
+    if(!is.numeric(dfInput[[feature_y]])) {
+        stop(glue::glue("`{feature_y}` must be a numerical column"), call. = FALSE)
+    }
+
+    dfNum <- as.data.frame(dfInput)[vapply(dfInput, is.numeric, logical(1))]
+    vFeatures <- setdiff(names(dfNum), feature_y)
+
+    if(length(vFeatures) == 0) {
+        stop("`dfInput` has no other numerical columns", call. = FALSE)
+    }
+
+    vCor <- cor(dfNum[vFeatures], dfNum[[feature_y]], use = "pairwise.complete.obs", method = method)[, 1]
+
+    df <- tibble::tibble(feature = vFeatures, correlation = unname(vCor)) %>%
+        dplyr::filter(!is.na(correlation), abs(correlation) >= minAbsCor) %>%
+        arrange(desc(abs(correlation)))
+
+    if(!is.null(nTop)) {
+        df <- dplyr::slice_head(df, n = nTop)
+    }
+
+    if(nrow(df) == 0) {
+        message(glue::glue("No features with an absolute correlation of at least {minAbsCor}"))
+        return(invisible(NULL))
+    }
+
+    df <- df %>%
+        mutate(sign = factor(ifelse(correlation < 0, "negative", "positive"), levels = c("positive", "negative")),
+               feature = fct_reorder(feature, correlation))
+
+    if(is.null(plotTitle)) {
+        plotTitle <- glue::glue("{stringr::str_to_title(method)} correlation with {feature_y}")
+    }
+
+    p <- ggplot(df, aes(x = feature, y = correlation, fill = sign)) +
+        geom_col() +
+        geom_hline(yintercept = 0, color = "darkgrey") +
+        geom_text(aes(label = sprintf("%.2f", correlation), hjust = ifelse(correlation < 0, 1.15, -0.15)), size = 3) +
+        scale_fill_quant(palette = "heatmap", drop = FALSE, guide = "none") +
+        scale_y_continuous(expand = expansion(mult = 0.15)) +
+        coord_flip() +
+        labs(title = plotTitle, x = "", y = "correlation")
+
+    return(p)
+}
+
+
+#' Box plots by category within quantile bins of a confounder
+#'
+#' MULTIVARIATE (categorical-numerical-numerical): box plots of `feature_y`
+#' for each category of `feature_cat`, faceted by quantile bins of the
+#' numerical `feature_bin`. Holding `feature_bin` roughly constant shows the
+#' effect of the category that a plain box plot can hide: e.g. diamonds of a
+#' better clarity look cheaper overall only because they tend to be smaller.
+#' Categories are ordered by median `feature_y` unless they are an ordered
+#' factor. Each facet is labelled with the range of `feature_bin` in it.
+#'
+#' @inheritParams eda_plot_box
+#' @param feature_y Name of the numerical column to compare across
+#'   categories.
+#' @param feature_bin Name of the numerical column to bin.
+#' @param nBins Number of quantile bins. Fewer bins are used when quantiles
+#'   are tied.
+#'
+#' @return A ggplot object.
+#' @family EDA plots
+#' @export
+#'
+#' @examples
+#' eda_plot_box_by_bins(ggplot2::diamonds, "clarity", "price", "carat", yLog = TRUE)
+#' eda_plot_box_by_bins(ggplot2::mpg, "drv", "hwy", "displ", nBins = 3)
+eda_plot_box_by_bins <- function(dfInput, feature_cat, feature_y, feature_bin, nBins = 4,
+                                 yLog = FALSE, yLabelsScale = waiver()) {
+
+    if(!is.numeric(dfInput[[feature_bin]])) {
+        stop(glue::glue("`{feature_bin}` must be a numerical column"), call. = FALSE)
+    }
+
+    df <- data.frame(x = dfInput[[feature_cat]], y = dfInput[[feature_y]], z = dfInput[[feature_bin]]) %>%
+        drop_na(y, z)
+
+    vBreaks <- unique(stats::quantile(df$z, probs = seq(0, 1, length.out = nBins + 1), names = FALSE))
+    df$bin <- cut(df$z, breaks = vBreaks, include.lowest = TRUE, labels = FALSE)
+
+    dfBins <- df %>%
+        group_by(bin) %>%
+        summarise(z_min = min(z), z_max = max(z), .groups = "drop") %>%
+        mutate(label = paste0(feature_bin, ": ",
+                              prettyNum(signif(z_min, 3), big.mark = ","), "\u2013",
+                              prettyNum(signif(z_max, 3), big.mark = ",")),
+               label = make.unique(label, sep = " "))
+
+    df <- df %>%
+        mutate(bin = factor(bin, levels = dfBins$bin, labels = dfBins$label)) %>%
+        group_by(x) %>%
+        mutate(median_x = median(y, na.rm = TRUE)) %>%
+        ungroup() %>%
+        mutate(x = if(is.ordered(x)) {x} else {fct_reorder(as.factor(x), median_x)})
+
+    p <- ggplot(df, aes(x = x, y = y, fill = x)) +
+        geom_boxplot() +
+        facet_wrap(~bin) +
+        scale_fill_quant(palette = "metro", name = feature_cat, guide = "none") +
+        coord_flip() +
+        labs(title = glue::glue("{feature_y} by {feature_cat} within quantile bins of {feature_bin}"), x = "")
+
+    if(yLog) {
+        p <- p + scale_y_log10(name = glue::glue("{feature_y} (log scale)"), labels = yLabelsScale)
+    } else {
+        p <- p + scale_y_continuous(name = feature_y, labels = yLabelsScale)
+    }
+    return(p)
+}
+
+
+#' Scatter plots of a target against transforms of a feature
+#'
+#' BIVARIATE (numerical-numerical): one panel per transform of `feature_x`,
+#' scattered against `feature_y` with a linear fit. Each panel is labelled
+#' with the \eqn{R^2} of a linear regression of `feature_y` (log10 when
+#' `yLog = TRUE`) on the transformed `feature_x`, so the transform that makes
+#' the relationship most linear stands out.
+#'
+#' Non-positive `feature_x` values are dropped for `"log"`, negative ones for
+#' `"sqrt"`, and non-positive `feature_y` values when `yLog = TRUE`. The
+#' caption says how many were dropped.
+#'
+#' @inheritParams eda_plot_scatter_cat
+#' @param transforms Transforms of `feature_x` to compare: any of
+#'   `"identity"`, `"log"` (natural log), `"sqrt"` and `"cuberoot"`.
+#'
+#' @return A ggplot object. Its data has an `r_squared` column with the
+#'   \eqn{R^2} of each transform.
+#' @family EDA plots
+#' @export
+#'
+#' @examples
+#' eda_plot_transforms(ggplot2::diamonds, "carat", "price")
+#' eda_plot_transforms(mtcars, "hp", "mpg", transforms = c("identity", "log"),
+#'                     yLog = FALSE, alpha = 0.6)
+eda_plot_transforms <- function(dfInput, feature_x, feature_y,
+                                transforms = c("identity", "log", "sqrt", "cuberoot"),
+                                yLog = TRUE, alpha = 0.1) {
+    transforms <- match.arg(transforms, several.ok = TRUE)
+
+    if(!is.numeric(dfInput[[feature_x]])) {
+        stop(glue::glue("`{feature_x}` must be a numerical column"), call. = FALSE)
+    }
+
+    lTransforms <- list(identity = function(x) x,
+                        log = log,
+                        sqrt = sqrt,
+                        cuberoot = function(x) sign(x) * abs(x)^(1/3))
+    vLabels <- c(identity = feature_x,
+                 log = paste0("log(", feature_x, ")"),
+                 sqrt = paste0("sqrt(", feature_x, ")"),
+                 cuberoot = paste0("cuberoot(", feature_x, ")"))
+
+    df0 <- data.frame(x = dfInput[[feature_x]], y = dfInput[[feature_y]]) %>%
+        drop_na()
+
+    vCaption <- character(0)
+    if(yLog && any(df0$y <= 0)) {
+        vCaption <- c(vCaption, glue::glue("{sum(df0$y <= 0)} non-positive {feature_y} values dropped for the log scale"))
+        df0 <- dplyr::filter(df0, y > 0)
+    }
+    if("log" %in% transforms && any(df0$x <= 0)) {
+        vCaption <- c(vCaption, glue::glue("{sum(df0$x <= 0)} non-positive {feature_x} values dropped for log"))
+    }
+    if("sqrt" %in% transforms && any(df0$x < 0)) {
+        vCaption <- c(vCaption, glue::glue("{sum(df0$x < 0)} negative {feature_x} values dropped for sqrt"))
+    }
+
+    df <- dplyr::bind_rows(lapply(transforms, function(tr) {
+        dfTr <- df0
+        if(tr == "log") dfTr <- dplyr::filter(dfTr, x > 0)
+        if(tr == "sqrt") dfTr <- dplyr::filter(dfTr, x >= 0)
+        xTr <- lTransforms[[tr]](dfTr$x)
+        yFit <- if(yLog) log10(dfTr$y) else dfTr$y
+        tibble::tibble(transform = tr,
+                       x = xTr,
+                       y = dfTr$y,
+                       r_squared = summary(stats::lm(yFit ~ xTr))$r.squared)
+    }))
+
+    dfLabels <- df %>%
+        dplyr::distinct(transform, r_squared) %>%
+        mutate(label = paste0(vLabels[transform], "\nR\u00b2 = ", sprintf("%.3f", r_squared)))
+
+    df <- df %>%
+        mutate(transform = factor(transform, levels = dfLabels$transform, labels = dfLabels$label))
+
+    p <- ggplot(df, aes(x = x, y = y)) +
+        geom_point(color = "#00AEDB", alpha = alpha) +
+        geom_smooth(method = "lm", formula = y ~ x, se = FALSE, color = "#D11141") +
+        facet_wrap(~transform, scales = "free_x") +
+        coord_cartesian(ylim = range(df$y)) +
+        labs(title = glue::glue("{feature_y} v/s transforms of {feature_x}"),
+             x = "",
+             caption = if(length(vCaption) > 0) paste(vCaption, collapse = "; ") else NULL)
+
+    if(yLog) {
+        p <- p + scale_y_log10(name = glue::glue("{feature_y} (log scale)"))
+    } else {
+        p <- p + scale_y_continuous(name = feature_y)
+    }
+    return(p)
+}
+
+
+#' Share of the most common level of each categorical feature
+#'
+#' UNIVARIATE (categorical): one bar per categorical (factor, character or
+#' logical) column with the share of rows in its most common level, sorted,
+#' with a dashed line at `threshold`. Bars at or above the threshold are
+#' highlighted in red: such near-constant features carry little information.
+#' Each bar is labelled with its dominant level and with how many of its
+#' levels have fewer than `minCount` rows. Missing values count as a level
+#' called `"NA"`.
+#'
+#' @inheritParams eda_plot_histograms
+#' @param threshold Share of the most common level at or above which a
+#'   feature is highlighted.
+#' @param minCount Levels with fewer rows than this are counted as rare.
+#'
+#' @return A ggplot object, or invisibly `NULL` with a message if `dfInput`
+#'   has no categorical columns. Its data has one row per feature with the
+#'   columns `dominant_level`, `share`, `n_levels` and `n_rare`.
+#' @family EDA plots
+#' @export
+#'
+#' @examples
+#' eda_plot_category_dominance(ggplot2::mpg, threshold = 0.6)
+#' eda_plot_category_dominance(ggplot2::diamonds)
+eda_plot_category_dominance <- function(dfInput, threshold = 0.95, minCount = 10) {
+    vCategorical <- names(dfInput)[vapply(dfInput, function(Z) is.factor(Z) | is.character(Z) | is.logical(Z), logical(1))]
+
+    if(length(vCategorical) == 0) {
+        message("No categorical features in dataset")
+        return(invisible(NULL))
+    }
+
+    df <- dplyr::bind_rows(lapply(vCategorical, function(feature_cat) {
+        vValues <- as.character(dfInput[[feature_cat]])
+        vValues[is.na(vValues)] <- "NA"
+        vCounts <- sort(table(vValues), decreasing = TRUE)
+        tibble::tibble(feature = feature_cat,
+                       dominant_level = names(vCounts)[1],
+                       share = as.numeric(vCounts[1]) / sum(vCounts),
+                       n_levels = length(vCounts),
+                       n_rare = sum(vCounts < minCount))
+    })) %>%
+        mutate(dominated = factor(share >= threshold, levels = c(FALSE, TRUE)),
+               label = paste0(dominant_level, " (", n_rare, " of ", n_levels, " levels < ", minCount, " rows)"),
+               feature = fct_reorder(feature, share))
+
+    p <- ggplot(df, aes(x = feature, y = share)) +
+        geom_col(aes(fill = dominated)) +
+        geom_hline(yintercept = threshold, linetype = "dashed") +
+        geom_label(aes(label = label), hjust = -0.05, size = 2.8) +
+        scale_fill_quant(palette = "heatmap", drop = FALSE, guide = "none") +
+        scale_y_continuous(labels = scales::label_percent(), breaks = seq(0, 1, by = 0.25)) +
+        expand_limits(y = c(0, 1.6)) +
+        coord_flip() +
+        labs(title = "Share of the most common level",
+             subtitle = glue::glue("Highlighted: at least {scales::percent(threshold)} of rows in one level"),
+             x = "",
+             y = "share of rows")
+
+    return(p)
+}
+
+
+#' Actual versus predicted values
+#'
+#' MODEL FIT: scatter plot of actual against predicted values with a dashed
+#' 45-degree line, and the RMSE and \eqn{R^2} in the subtitle. \eqn{R^2} is
+#' the squared correlation of actual and predicted values, as in
+#' `yardstick::rsq()`. With `feature_model`, each model gets its own panel and
+#' its own line in the subtitle. The `nLabel` points with the largest absolute
+#' error in each panel are highlighted and labelled with `feature_id`, or
+#' with their row number if `feature_id` is `NULL`.
+#'
+#' @inheritParams eda_plot_histograms
+#' @param feature_actual Name of the column of actual values (y axis).
+#' @param feature_predicted Name of the column of predicted values (x axis).
+#' @param feature_model Optional name of a column identifying the model, to
+#'   compare several models stacked in long format.
+#' @param feature_id Optional name of a column used to label the worst
+#'   predictions.
+#' @param nLabel Number of points with the largest absolute error to label in
+#'   each panel; `0` labels none.
+#' @param yLog If `TRUE`, use a log10 y axis.
+#' @param labelsScale Labels for both axes, e.g. [scales::label_dollar()]. If
+#'   it is a function, it also formats the RMSE.
+#'
+#' @return A ggplot object.
+#' @family EDA plots
+#' @export
+#'
+#' @examples
+#' fit <- lm(mpg ~ wt + hp, data = mtcars)
+#' df <- data.frame(car = rownames(mtcars), mpg = mtcars$mpg, pred = fitted(fit))
+#' eda_plot_actual_vs_predicted(df, "mpg", "pred", feature_id = "car")
+#'
+#' fit2 <- lm(mpg ~ wt, data = mtcars)
+#' dfBoth <- rbind(data.frame(df, model = "wt + hp"),
+#'                 data.frame(df[1:2], pred = fitted(fit2), model = "wt"))
+#' eda_plot_actual_vs_predicted(dfBoth, "mpg", "pred", feature_model = "model",
+#'                              feature_id = "car", nLabel = 3)
+eda_plot_actual_vs_predicted <- function(dfInput, feature_actual, feature_predicted, feature_model = NULL,
+                                         feature_id = NULL, nLabel = 5, xLog = FALSE, yLog = FALSE,
+                                         labelsScale = waiver()) {
+
+    df <- data.frame(actual = dfInput[[feature_actual]],
+                     predicted = dfInput[[feature_predicted]],
+                     model = if(is.null(feature_model)) {"all"} else {dfInput[[feature_model]]},
+                     id = if(is.null(feature_id)) {seq_len(nrow(dfInput))} else {dfInput[[feature_id]]}) %>%
+        drop_na(actual, predicted) %>%
+        mutate(model = if(is.factor(model)) {model} else {fct_inorder(as.character(model))},
+               abs_error = abs(actual - predicted))
+
+    dfMetrics <- df %>%
+        group_by(model) %>%
+        summarise(rmse = sqrt(mean((actual - predicted)^2)),
+                  rsq = cor(actual, predicted)^2,
+                  .groups = "drop")
+
+    vRmse <- if(is.function(labelsScale)) {labelsScale(dfMetrics$rmse)} else {prettyNum(signif(dfMetrics$rmse, 3), big.mark = ",")}
+    vMetrics <- paste0("RMSE = ", vRmse, ", R\u00b2 = ", sprintf("%.3f", dfMetrics$rsq))
+    if(!is.null(feature_model)) {
+        vMetrics <- paste0(dfMetrics$model, ": ", vMetrics)
+    }
+
+    dfLabel <- df %>%
+        group_by(model) %>%
+        dplyr::slice_max(abs_error, n = nLabel, with_ties = FALSE) %>%
+        ungroup()
+
+    vValues <- c(df$actual, df$predicted)
+    if(xLog | yLog) {
+        vRange <- range(vValues[vValues > 0])
+        dfLine <- data.frame(v = exp(seq(log(vRange[1]), log(vRange[2]), length.out = 100)))
+    } else {
+        vRange <- range(vValues)
+        dfLine <- data.frame(v = vRange)
+    }
+
+    p <- ggplot(df, aes(x = predicted, y = actual)) +
+        geom_line(data = dfLine, aes(x = v, y = v), linetype = "dashed", color = "darkgrey") +
+        geom_point(color = "#00AEDB", alpha = 0.5) +
+        expand_limits(x = vRange, y = vRange) +
+        labs(title = glue::glue("Actual v/s predicted {feature_actual}"),
+             subtitle = paste(vMetrics, collapse = "\n"))
+
+    if(nrow(dfLabel) > 0) {
+        p <- p +
+            geom_point(data = dfLabel, color = "#D11141") +
+            geom_label(data = dfLabel, aes(label = id), size = 2.8, hjust = "inward", vjust = "inward")
+    }
+
+    if(!is.null(feature_model)) {
+        p <- p + facet_wrap(~model)
+    }
+
+    if(xLog) {
+        p <- p + scale_x_log10(name = glue::glue("predicted {feature_actual} (log scale)"), labels = labelsScale)
+    } else {
+        p <- p + scale_x_continuous(name = glue::glue("predicted {feature_actual}"), labels = labelsScale)
+    }
+
+    if(yLog) {
+        p <- p + scale_y_log10(name = glue::glue("actual {feature_actual} (log scale)"), labels = labelsScale)
+    } else {
+        p <- p + scale_y_continuous(name = glue::glue("actual {feature_actual}"), labels = labelsScale)
+    }
+
+    return(p)
+}

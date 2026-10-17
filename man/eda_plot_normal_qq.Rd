@@ -24,8 +24,11 @@ eda_plot_normal_qq(df, "resid")
 }
 \seealso{
 Other EDA plots:
+\code{\link[=eda_plot_actual_vs_predicted]{eda_plot_actual_vs_predicted()}},
 \code{\link[=eda_plot_bar]{eda_plot_bar()}},
 \code{\link[=eda_plot_box]{eda_plot_box()}},
+\code{\link[=eda_plot_box_by_bins]{eda_plot_box_by_bins()}},
+\code{\link[=eda_plot_category_dominance]{eda_plot_category_dominance()}},
 \code{\link[=eda_plot_column]{eda_plot_column()}},
 \code{\link[=eda_plot_correlation_matrix]{eda_plot_correlation_matrix()}},
 \code{\link[=eda_plot_density]{eda_plot_density()}},
@@ -36,6 +39,8 @@ Other EDA plots:
 \code{\link[=eda_plot_scatter]{eda_plot_scatter()}},
 \code{\link[=eda_plot_scatter_cat]{eda_plot_scatter_cat()}},
 \code{\link[=eda_plot_scatter_cat_facets]{eda_plot_scatter_cat_facets()}},
-\code{\link[=eda_plot_stacked_bar]{eda_plot_stacked_bar()}}
+\code{\link[=eda_plot_stacked_bar]{eda_plot_stacked_bar()}},
+\code{\link[=eda_plot_target_correlations]{eda_plot_target_correlations()}},
+\code{\link[=eda_plot_transforms]{eda_plot_transforms()}}
 }
 \concept{EDA plots}

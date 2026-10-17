@@ -15,12 +15,14 @@
 #' @section EDA plots:
 #' * Univariate: [eda_plot_histograms()], [eda_plot_column()],
 #'   [eda_plot_missing_counts()], [eda_plot_missing_values()],
-#'   [eda_plot_normal_qq()].
+#'   [eda_plot_normal_qq()], [eda_plot_category_dominance()].
 #' * Bivariate: [eda_plot_scatter()], [eda_plot_box()], [eda_plot_bar()],
-#'   [eda_plot_density()], [eda_plot_stacked_bar()].
+#'   [eda_plot_density()], [eda_plot_stacked_bar()], [eda_plot_transforms()].
 #' * Multivariate: [eda_plot_scatter_cat()], [eda_plot_scatter_cat_facets()],
 #'   [eda_plot_heatmap()], [eda_plot_correlation_matrix()],
-#'   [plot_correlations_gg()].
+#'   [plot_correlations_gg()], [eda_plot_target_correlations()],
+#'   [eda_plot_box_by_bins()].
+#' * Model fit: [eda_plot_actual_vs_predicted()].
 #'
 #' @section Data helpers:
 #' [find_mode()], [find_most_common_value()], [`%notin%`], [change_na_to()],
@@ -49,6 +51,9 @@
 "_PACKAGE"
 
 globalVariables(c(
-    "CorVal", "Var1", "Var2", "feature", "feature_class", "median_x",
-    "median_y", "median_z", "n", "na_count", "prop", "value", "x", "y", "z"
+    "CorVal", "Var1", "Var2", "abs_error", "actual", "bin", "correlation",
+    "dominant_level", "dominated", "feature", "feature_class", "id", "label",
+    "median_x", "median_y", "median_z", "model", "n", "n_levels", "n_rare",
+    "na_count", "predicted", "prop", "r_squared", "share", "v", "value", "x",
+    "y", "z", "z_max", "z_min"
 ))

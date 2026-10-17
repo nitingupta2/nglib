@@ -1,3 +1,24 @@
+# nglib 1.2.0
+
+New EDA plots:
+
+* `eda_plot_target_correlations()`: sorted bars of the correlation of every
+  numerical feature with a target, red for negative and blue for positive.
+  Pearson or Spearman, with `minAbsCor` and `nTop` filters. Useful when a
+  correlation matrix has too many features to read.
+* `eda_plot_box_by_bins()`: box plots of a target by category within
+  quantile bins of a numerical confounder, to show a category's effect with
+  the confounder held roughly constant.
+* `eda_plot_transforms()`: a target against the identity, log, square root
+  and cube root of a feature, each panel labelled with the R-squared of a
+  linear fit, so the most linear transform stands out.
+* `eda_plot_category_dominance()`: the share of the most common level of
+  every categorical feature, highlighting near-constant features above a
+  threshold and counting rare levels.
+* `eda_plot_actual_vs_predicted()`: actual against predicted values with a
+  45-degree line, RMSE and R-squared in the subtitle, one panel per model,
+  and the worst predictions labelled.
+
 # nglib 1.1.0
 
 * `theme_quant()` and `theme_poster()`, with `set_theme_quant()`,

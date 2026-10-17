@@ -11,9 +11,10 @@ What's included:
 | Themes | `theme_quant()`, `theme_poster()`, `set_theme_quant()`, `set_theme_poster()`, `update_font_defaults()` |
 | Scales | `scale_color_quant()`, `scale_fill_quant()`, `scale_color_quant_manual()`, `scale_fill_quant_manual()` |
 | Palettes | `get_palettes()`, `quant_pal()`, `plot_colors()`, `test_pal()`, `convert_mm_to_pts()` |
-| EDA: univariate | `eda_plot_histograms()`, `eda_plot_column()`, `eda_plot_missing_counts()`, `eda_plot_missing_values()`, `eda_plot_normal_qq()` |
-| EDA: bivariate | `eda_plot_scatter()`, `eda_plot_box()`, `eda_plot_bar()`, `eda_plot_density()`, `eda_plot_stacked_bar()` |
-| EDA: multivariate | `eda_plot_scatter_cat()`, `eda_plot_scatter_cat_facets()`, `eda_plot_heatmap()`, `eda_plot_correlation_matrix()`, `plot_correlations_gg()` |
+| EDA: univariate | `eda_plot_histograms()`, `eda_plot_column()`, `eda_plot_missing_counts()`, `eda_plot_missing_values()`, `eda_plot_normal_qq()`, `eda_plot_category_dominance()` |
+| EDA: bivariate | `eda_plot_scatter()`, `eda_plot_box()`, `eda_plot_bar()`, `eda_plot_density()`, `eda_plot_stacked_bar()`, `eda_plot_transforms()` |
+| EDA: multivariate | `eda_plot_scatter_cat()`, `eda_plot_scatter_cat_facets()`, `eda_plot_heatmap()`, `eda_plot_correlation_matrix()`, `plot_correlations_gg()`, `eda_plot_target_correlations()`, `eda_plot_box_by_bins()` |
+| EDA: model fit | `eda_plot_actual_vs_predicted()` |
 | Data helpers | `find_mode()`, `%notin%`, `change_na_to()`, `change_na_to_most_common_value()`, `median_by_grouping()`, `most_common_value_by_grouping()`, `significant_digits()`, `pct_diff_lagging()`, `pct_diff_leading()`, `nearest_multiple()`, `correlation_reorder_matrix()` |
 
 ## Installation
@@ -99,6 +100,41 @@ eda_plot_missing_counts(airquality)
 ```
 
 ![](man/figures/eda-missing.png)
+
+When there are too many features for a correlation matrix, plot only their
+correlation with the target:
+
+```r
+eda_plot_target_correlations(mtcars, "mpg")
+```
+
+A category can look backwards when a numerical feature drives both it and
+the target. Better clarity diamonds have a lower median price only because
+they tend to be smaller; within bins of carat, price rises with clarity:
+
+```r
+eda_plot_box_by_bins(ggplot2::diamonds, "clarity", "price", "carat", yLog = TRUE)
+```
+
+To pick a transform, compare how linear each one is with the target:
+
+```r
+eda_plot_transforms(ggplot2::diamonds, "carat", "price")
+```
+
+To find near-constant categorical features and rare levels:
+
+```r
+eda_plot_category_dominance(ggplot2::mpg, threshold = 0.6)
+```
+
+To check a model's predictions, with the worst ones labelled:
+
+```r
+fit <- lm(mpg ~ wt + hp, data = mtcars)
+df <- data.frame(car = rownames(mtcars), mpg = mtcars$mpg, pred = fitted(fit))
+eda_plot_actual_vs_predicted(df, "mpg", "pred", feature_id = "car")
+```
 
 ### Themes and scales
 
