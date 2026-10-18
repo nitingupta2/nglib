@@ -48,11 +48,11 @@ data analysis (EDA) plots, and a few small data-wrangling helpers.
 }
 
 \author{
-\strong{Maintainer}: Nitin Gupta \email{gupta.nitin1@gmail.com} [copyright holder]
+\strong{Maintainer}: Nitin Gupta \email{7339049+nitingupta2@users.noreply.github.com} [copyright holder]
 
 Authors:
 \itemize{
-  \item Nitin Gupta \email{gupta.nitin1@gmail.com} [copyright holder]
+  \item Nitin Gupta \email{7339049+nitingupta2@users.noreply.github.com} [copyright holder]
 }
 
 }

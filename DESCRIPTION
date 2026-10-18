@@ -3,7 +3,7 @@ Type: Package
 Title: Plotting Themes, Color Scales and Exploratory Data Analysis Plots
 Version: 1.2.0
 Authors@R:
-    person("Nitin", "Gupta", , "gupta.nitin1@gmail.com", role = c("aut", "cre", "cph"))
+    person("Nitin", "Gupta", , "7339049+nitingupta2@users.noreply.github.com", role = c("aut", "cre", "cph"))
 Description: Provides the 'ggplot2' themes theme_quant() and theme_poster(), custom
     discrete and continuous color/fill scales built on a set of named
     palettes, a family of quick exploratory data analysis (EDA) plots for
