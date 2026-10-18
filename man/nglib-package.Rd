@@ -34,7 +34,7 @@ data analysis (EDA) plots, and a few small data-wrangling helpers.
 \code{\link[=eda_plot_heatmap]{eda_plot_heatmap()}}, \code{\link[=eda_plot_correlation_matrix]{eda_plot_correlation_matrix()}},
 \code{\link[=plot_correlations_gg]{plot_correlations_gg()}}, \code{\link[=eda_plot_association_matrix]{eda_plot_association_matrix()}},
 \code{\link[=eda_plot_target_correlations]{eda_plot_target_correlations()}}, \code{\link[=eda_plot_box_by_bins]{eda_plot_box_by_bins()}}.
-\item Model fit: \code{\link[=eda_plot_actual_vs_predicted]{eda_plot_actual_vs_predicted()}}, \code{\link[=eda_plot_residuals]{eda_plot_residuals()}}.
+\item Model fit: \code{\link[=eda_plot_predicted_vs_actual]{eda_plot_predicted_vs_actual()}}, \code{\link[=eda_plot_residuals]{eda_plot_residuals()}}.
 }
 }
 

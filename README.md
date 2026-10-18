@@ -14,7 +14,7 @@ What's included:
 | EDA: univariate | `eda_plot_histograms()`, `eda_plot_column()`, `eda_plot_missing_counts()`, `eda_plot_missing_values()`, `eda_plot_normal_qq()`, `eda_plot_category_dominance()` |
 | EDA: bivariate | `eda_plot_scatter()`, `eda_plot_box()`, `eda_plot_bar()`, `eda_plot_density()`, `eda_plot_stacked_bar()`, `eda_plot_transforms()` |
 | EDA: multivariate | `eda_plot_scatter_cat()`, `eda_plot_scatter_cat_facets()`, `eda_plot_heatmap()`, `eda_plot_correlation_matrix()`, `plot_correlations_gg()`, `eda_plot_association_matrix()`, `eda_plot_target_correlations()`, `eda_plot_box_by_bins()` |
-| EDA: model fit | `eda_plot_actual_vs_predicted()`, `eda_plot_residuals()` |
+| EDA: model fit | `eda_plot_predicted_vs_actual()`, `eda_plot_residuals()` |
 | Data helpers | `find_mode()`, `%notin%`, `change_na_to()`, `change_na_to_most_common_value()`, `median_by_grouping()`, `most_common_value_by_grouping()`, `significant_digits()`, `pct_diff_lagging()`, `pct_diff_leading()`, `nearest_multiple()`, `correlation_reorder_matrix()`, `association_matrix()`, `flag_outliers()` |
 
 ## Installation
@@ -164,10 +164,10 @@ To check a model's predictions, with the worst ones labelled:
 ```r
 fit <- lm(mpg ~ wt + hp, data = mtcars)
 df <- data.frame(car = rownames(mtcars), mpg = mtcars$mpg, pred = fitted(fit))
-eda_plot_actual_vs_predicted(df, "mpg", "pred", feature_id = "car")
+eda_plot_predicted_vs_actual(df, "mpg", "pred", feature_id = "car")
 ```
 
-![](man/figures/eda-actual-vs-predicted.png)
+![](man/figures/eda-predicted-vs-actual.png)
 
 The four residual plots of a linear model, as `plot(fit)` draws them but in
 the same theme as the other plots:

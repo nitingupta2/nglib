@@ -1052,19 +1052,21 @@ eda_plot_category_dominance <- function(dfInput, threshold = 0.95, minCount = 10
 }
 
 
-#' Actual versus predicted values
+#' Predicted versus actual values
 #'
-#' MODEL FIT: scatter plot of actual against predicted values with a dashed
-#' 45-degree line, and the RMSE and \eqn{R^2} in the subtitle. \eqn{R^2} is
-#' the squared correlation of actual and predicted values, as in
+#' MODEL FIT: scatter plot of predicted against actual values with the
+#' 45-degree line of perfect predictions, drawn like the fitted line of
+#' [eda_plot_scatter()], and the RMSE and \eqn{R^2} in the subtitle. Points
+#' above the line are over-predicted and points below it under-predicted.
+#' \eqn{R^2} is the squared correlation of actual and predicted values, as in
 #' `yardstick::rsq()`. With `feature_model`, each model gets its own panel and
 #' its own line in the subtitle. The `nLabel` points with the largest absolute
 #' error in each panel are highlighted and labelled with `feature_id`, or
 #' with their row number if `feature_id` is `NULL`.
 #'
 #' @inheritParams eda_plot_histograms
-#' @param feature_actual Name of the column of actual values (y axis).
-#' @param feature_predicted Name of the column of predicted values (x axis).
+#' @param feature_actual Name of the column of actual values (x axis).
+#' @param feature_predicted Name of the column of predicted values (y axis).
 #' @param feature_model Optional name of a column identifying the model, to
 #'   compare several models stacked in long format.
 #' @param feature_id Optional name of a column used to label the worst
@@ -1082,14 +1084,14 @@ eda_plot_category_dominance <- function(dfInput, threshold = 0.95, minCount = 10
 #' @examples
 #' fit <- lm(mpg ~ wt + hp, data = mtcars)
 #' df <- data.frame(car = rownames(mtcars), mpg = mtcars$mpg, pred = fitted(fit))
-#' eda_plot_actual_vs_predicted(df, "mpg", "pred", feature_id = "car")
+#' eda_plot_predicted_vs_actual(df, "mpg", "pred", feature_id = "car")
 #'
 #' fit2 <- lm(mpg ~ wt, data = mtcars)
 #' dfBoth <- rbind(data.frame(df, model = "wt + hp"),
 #'                 data.frame(df[1:2], pred = fitted(fit2), model = "wt"))
-#' eda_plot_actual_vs_predicted(dfBoth, "mpg", "pred", feature_model = "model",
+#' eda_plot_predicted_vs_actual(dfBoth, "mpg", "pred", feature_model = "model",
 #'                              feature_id = "car", nLabel = 3)
-eda_plot_actual_vs_predicted <- function(dfInput, feature_actual, feature_predicted, feature_model = NULL,
+eda_plot_predicted_vs_actual <- function(dfInput, feature_actual, feature_predicted, feature_model = NULL,
                                          feature_id = NULL, nLabel = 5, xLog = FALSE, yLog = FALSE,
                                          labelsScale = waiver()) {
 
@@ -1127,11 +1129,11 @@ eda_plot_actual_vs_predicted <- function(dfInput, feature_actual, feature_predic
         dfLine <- data.frame(v = vRange)
     }
 
-    p <- ggplot(df, aes(x = predicted, y = actual)) +
-        geom_line(data = dfLine, aes(x = v, y = v), linetype = "dashed", color = "#D11141", linewidth = 1) +
+    p <- ggplot(df, aes(x = actual, y = predicted)) +
         geom_point(color = "#00AEDB", alpha = 0.5) +
+        geom_line(data = dfLine, aes(x = v, y = v), color = "#D11141", linewidth = 1) +
         expand_limits(x = vRange, y = vRange) +
-        labs(title = glue::glue("Actual v/s predicted {feature_actual}"),
+        labs(title = glue::glue("Predicted v/s actual {feature_actual}"),
              subtitle = paste(vMetrics, collapse = "\n"))
 
     if(nrow(dfLabel) > 0) {
@@ -1146,15 +1148,15 @@ eda_plot_actual_vs_predicted <- function(dfInput, feature_actual, feature_predic
     }
 
     if(xLog) {
-        p <- p + scale_x_log10(name = glue::glue("predicted {feature_actual} (log scale)"), labels = labelsScale)
+        p <- p + scale_x_log10(name = glue::glue("actual {feature_actual} (log scale)"), labels = labelsScale)
     } else {
-        p <- p + scale_x_continuous(name = glue::glue("predicted {feature_actual}"), labels = labelsScale)
+        p <- p + scale_x_continuous(name = glue::glue("actual {feature_actual}"), labels = labelsScale)
     }
 
     if(yLog) {
-        p <- p + scale_y_log10(name = glue::glue("actual {feature_actual} (log scale)"), labels = labelsScale)
+        p <- p + scale_y_log10(name = glue::glue("predicted {feature_actual} (log scale)"), labels = labelsScale)
     } else {
-        p <- p + scale_y_continuous(name = glue::glue("actual {feature_actual}"), labels = labelsScale)
+        p <- p + scale_y_continuous(name = glue::glue("predicted {feature_actual}"), labels = labelsScale)
     }
 
     return(p)

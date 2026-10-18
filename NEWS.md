@@ -9,10 +9,12 @@ New EDA plot:
 
 Changes:
 
-* `eda_plot_actual_vs_predicted()` draws its 45-degree line in red, as wide
-  as the fitted lines of the other scatter plots.
+* `eda_plot_actual_vs_predicted()` is renamed `eda_plot_predicted_vs_actual()`
+  and now plots predicted values (y) against actual values (x). Its
+  45-degree line is drawn like the fitted line of `eda_plot_scatter()`:
+  solid, red and over the points. The old name is removed.
 * Labels of individual points in `eda_plot_scatter()`,
-  `eda_plot_actual_vs_predicted()` and `eda_plot_residuals()` are placed
+  `eda_plot_predicted_vs_actual()` and `eda_plot_residuals()` are placed
   with 'ggrepel' so they don't overlap. 'ggrepel' is a new import.
 
 # nglib 1.2.0

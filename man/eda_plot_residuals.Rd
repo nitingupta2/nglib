@@ -68,7 +68,6 @@ eda_plot_residuals(fitDiamonds, alpha = 0.05, nLabel = 0)
 }
 \seealso{
 Other EDA plots:
-\code{\link[=eda_plot_actual_vs_predicted]{eda_plot_actual_vs_predicted()}},
 \code{\link[=eda_plot_association_matrix]{eda_plot_association_matrix()}},
 \code{\link[=eda_plot_bar]{eda_plot_bar()}},
 \code{\link[=eda_plot_box]{eda_plot_box()}},
@@ -82,6 +81,7 @@ Other EDA plots:
 \code{\link[=eda_plot_missing_counts]{eda_plot_missing_counts()}},
 \code{\link[=eda_plot_missing_values]{eda_plot_missing_values()}},
 \code{\link[=eda_plot_normal_qq]{eda_plot_normal_qq()}},
+\code{\link[=eda_plot_predicted_vs_actual]{eda_plot_predicted_vs_actual()}},
 \code{\link[=eda_plot_scatter]{eda_plot_scatter()}},
 \code{\link[=eda_plot_scatter_cat]{eda_plot_scatter_cat()}},
 \code{\link[=eda_plot_scatter_cat_facets]{eda_plot_scatter_cat_facets()}},

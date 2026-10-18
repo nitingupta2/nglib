@@ -22,7 +22,7 @@
 #'   [eda_plot_heatmap()], [eda_plot_correlation_matrix()],
 #'   [plot_correlations_gg()], [eda_plot_association_matrix()],
 #'   [eda_plot_target_correlations()], [eda_plot_box_by_bins()].
-#' * Model fit: [eda_plot_actual_vs_predicted()], [eda_plot_residuals()].
+#' * Model fit: [eda_plot_predicted_vs_actual()], [eda_plot_residuals()].
 #'
 #' @section Data helpers:
 #' [find_mode()], [find_most_common_value()], [`%notin%`], [change_na_to()],
