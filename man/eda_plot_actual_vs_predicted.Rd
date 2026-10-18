@@ -64,6 +64,7 @@ eda_plot_actual_vs_predicted(dfBoth, "mpg", "pred", feature_model = "model",
 }
 \seealso{
 Other EDA plots:
+\code{\link[=eda_plot_association_matrix]{eda_plot_association_matrix()}},
 \code{\link[=eda_plot_bar]{eda_plot_bar()}},
 \code{\link[=eda_plot_box]{eda_plot_box()}},
 \code{\link[=eda_plot_box_by_bins]{eda_plot_box_by_bins()}},

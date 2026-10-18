@@ -195,7 +195,9 @@ eda_plot_normal_qq <- function(dfInput, feature_sample) {
 #'
 #' BIVARIATE (numerical-numerical): scatter plots of `feature_y` against each
 #' of `vFeaturesNum`, faceted when there is more than one, with an optional
-#' linear fit.
+#' linear fit. Optionally, the points that most influence a linear fit, such
+#' as a few very large houses sold at a low price, are highlighted and
+#' labelled.
 #'
 #' @inheritParams eda_plot_histograms
 #' @param feature_y Name of the numerical column for the y axis.
@@ -205,8 +207,23 @@ eda_plot_normal_qq <- function(dfInput, feature_sample) {
 #' @param yLimits Limits of the y axis, or `NULL`.
 #' @param yLog If `TRUE`, use a log10 y axis.
 #' @param yLabelsScale Labels for the y axis.
+#' @param nLabel Maximum number of influential points to label in each panel;
+#'   `0` labels none.
+#' @param feature_id Optional name of a column used to label points. If
+#'   `NULL`, points are labelled with their row number.
+#' @param labelBy How influential points are picked: `"leverage"`, the hat
+#'   value of a point in the linear fit of `feature_y` on the feature, which
+#'   is high when its x is far from the rest; or `"cooks"`, Cook's distance,
+#'   which is high only when such a point also has a large residual, i.e. it
+#'   pulls the fit.
 #'
 #' @details `xLog` only applies when a single feature is plotted.
+#'
+#' Influence is computed from `lm(y ~ x)` in each panel, on log10 scales
+#' where the axes are logged. Only points beyond the usual cutoff of `4 / n`
+#' (twice the mean leverage for a simple regression, or the usual Cook's
+#' distance cutoff) are labelled, at most `nLabel` per panel, the most
+#' influential first.
 #'
 #' @return A ggplot object.
 #' @family EDA plots
@@ -216,17 +233,27 @@ eda_plot_normal_qq <- function(dfInput, feature_sample) {
 #' eda_plot_scatter(mtcars, c("wt", "disp", "hp"), feature_y = "mpg")
 #' eda_plot_scatter(ggplot2::diamonds, "carat", "price", alpha = 0.05,
 #'                  xLog = TRUE, yLog = TRUE)
+#'
+#' df <- tibble::rownames_to_column(mtcars, "car")
+#' eda_plot_scatter(df, "hp", "mpg", nLabel = 3, feature_id = "car")
+#' eda_plot_scatter(df, c("hp", "wt"), "mpg", nLabel = 2, feature_id = "car",
+#'                  labelBy = "cooks")
 eda_plot_scatter <- function(dfInput, vFeaturesNum, feature_y, alpha = 0.3, add_lm = TRUE,
                              xLog = FALSE, xLimits = NULL, xLabelsScale = waiver(),
-                             yLog = FALSE, yLimits = NULL, yLabelsScale = waiver()) {
+                             yLog = FALSE, yLimits = NULL, yLabelsScale = waiver(),
+                             nLabel = 0, feature_id = NULL, labelBy = c("leverage", "cooks")) {
+    labelBy <- match.arg(labelBy)
 
     vFeaturesUnique <- unique(c(vFeaturesNum, feature_y))
 
+    vId <- if(is.null(feature_id)) {seq_len(nrow(dfInput))} else {dfInput[[feature_id]]}
+
     df <- dfInput %>%
         select(all_of(vFeaturesUnique)) %>%
-        pivot_longer(-all_of(feature_y), names_to = "feature", values_to = "x") %>%
-        select(all_of(feature_y), "feature", "x") %>%
-        set_names(c("y", "feature", "x"))
+        mutate(.id = vId) %>%
+        pivot_longer(-all_of(c(feature_y, ".id")), names_to = "feature", values_to = "x") %>%
+        select(all_of(feature_y), "feature", "x", ".id") %>%
+        set_names(c("y", "feature", "x", "id"))
 
     p <- ggplot(df, aes(x = x, y = y)) +
         geom_point(color = "#00AEDB", alpha = alpha) +
@@ -256,7 +283,35 @@ eda_plot_scatter <- function(dfInput, vFeaturesNum, feature_y, alpha = 0.3, add_
     } else {
         p <- p + labs(x = vFeaturesNum, title = glue::glue("Scatterplot of {feature_y} v/s {vFeaturesNum}"))
     }
+
+    if(nLabel > 0) {
+        xLogFit <- xLog & length(vFeaturesNum) == 1
+        dfLabel <- df %>%
+            dplyr::filter(!is.na(x), !is.na(y), !xLogFit | x > 0, !yLog | y > 0) %>%
+            group_by(feature) %>%
+            mutate(influence = .influence(if(xLogFit) {log10(x)} else {x},
+                                          if(yLog) {log10(y)} else {y},
+                                          labelBy)) %>%
+            dplyr::filter(influence > 4 / dplyr::n()) %>%
+            dplyr::slice_max(influence, n = nLabel, with_ties = FALSE) %>%
+            ungroup()
+
+        if(nrow(dfLabel) > 0) {
+            p <- p +
+                geom_point(data = dfLabel, color = "#D11141") +
+                geom_label(data = dfLabel, aes(label = id), size = 2.8, hjust = "inward", vjust = "inward")
+        }
+    }
     return(p)
+}
+
+# Leverage (hat values) or Cook's distance of each point in lm(y ~ x).
+.influence <- function(x, y, labelBy) {
+    if(length(x) < 3) return(rep(0, length(x)))
+    fit <- stats::lm(y ~ x)
+    vInfluence <- if(labelBy == "leverage") {stats::hatvalues(fit)} else {stats::cooks.distance(fit)}
+    vInfluence[is.na(vInfluence)] <- 0
+    return(unname(vInfluence))
 }
 
 
@@ -515,18 +570,29 @@ eda_plot_scatter_cat_facets <- function(dfInput, feature_x, feature_y, feature_c
 #' `feature_num` for each combination of `feature_cat1` and `feature_cat2`.
 #' Both axes are ordered by median unless they are ordered factors.
 #'
+#' A median of a few rows can look as meaningful as one of hundreds, so cells
+#' with fewer than `minCount` rows are drawn in grey and left out of the color
+#' scale, and the caption says how many there are. Each tile can also show its
+#' row count. Combinations with no rows are left blank.
+#'
 #' @inheritParams eda_plot_stacked_bar
 #' @param feature_cat1 Name of the categorical column for the x axis.
 #' @param feature_cat2 Name of the categorical column for the y axis.
 #' @param feature_num Name of the numerical column to summarise.
+#' @param minCount Cells with fewer rows than this are greyed out. Use `1` to
+#'   color every cell.
+#' @param showCounts If `TRUE`, label each tile with its number of rows.
 #'
-#' @return A ggplot object.
+#' @return A ggplot object. Its data has one row per cell with the median `z`
+#'   and the row count `n`.
 #' @family EDA plots
 #' @export
 #'
 #' @examples
 #' eda_plot_heatmap(ggplot2::diamonds, "cut", "color", "price")
-eda_plot_heatmap <- function(dfInput, feature_cat1, feature_cat2, feature_num) {
+#' eda_plot_heatmap(ggplot2::mpg, "class", "manufacturer", "hwy", minCount = 5)
+eda_plot_heatmap <- function(dfInput, feature_cat1, feature_cat2, feature_num,
+                             minCount = 10, showCounts = TRUE) {
     df <- data.frame(x = dfInput[[feature_cat1]], y = dfInput[[feature_cat2]], z = dfInput[[feature_num]]) %>%
         drop_na(z) %>%
         group_by(x) %>%
@@ -538,17 +604,28 @@ eda_plot_heatmap <- function(dfInput, feature_cat1, feature_cat2, feature_num) {
         ungroup() %>%
         mutate(y = if(is.ordered(y)) {y} else {fct_reorder(as.factor(y), median_y)}) %>%
         group_by(x, y) %>%
-        summarise(z = median(z, na.rm = TRUE), .groups = "drop")
+        summarise(z = median(z, na.rm = TRUE), n = dplyr::n(), .groups = "drop") %>%
+        mutate(sparse = n < minCount,
+               z_fill = ifelse(sparse, NA, z))
+
+    nSparse <- sum(df$sparse)
 
     p <- ggplot(df) +
-        geom_tile(aes(x = x, y = y, fill = z), color = "white") +
-        scale_fill_quant(palette = "heatmap", discrete = FALSE, name = paste("Median", feature_num)) +
+        geom_tile(aes(x = x, y = y, fill = z_fill), color = "white") +
+        scale_fill_quant(palette = "heatmap", discrete = FALSE, na.value = "grey85",
+                         name = paste("Median", feature_num)) +
         theme(panel.border = element_blank(),
               panel.grid.major = element_blank(),
               panel.grid.minor = element_blank()) +
         labs(title = glue::glue("Heatmap of median {feature_num} w.r.t. {feature_cat1} and {feature_cat2}"),
              x = feature_cat1,
-             y = feature_cat2)
+             y = feature_cat2,
+             caption = if(nSparse > 0) {glue::glue("{nSparse} of {nrow(df)} cells have fewer than {minCount} rows (grey)")} else {NULL})
+
+    if(showCounts) {
+        p <- p + geom_text(aes(x = x, y = y, label = n), size = 2.5,
+                           color = ifelse(df$sparse, "grey40", "white"))
+    }
     return(p)
 }
 
@@ -558,7 +635,8 @@ eda_plot_heatmap <- function(dfInput, feature_cat1, feature_cat2, feature_num) {
 #' MULTIVARIATE (numerical): clustered correlation heat map of the numerical
 #' columns of `dfInput`, styled with [theme_quant()] in the font of the
 #' current session theme. Non-numerical columns are ignored. See
-#' [plot_correlations_gg()].
+#' [plot_correlations_gg()], and [eda_plot_association_matrix()] to include
+#' categorical features.
 #'
 #' @inheritParams eda_plot_histograms
 #' @param outlineVar Optional name of a feature whose row and column are
@@ -574,6 +652,97 @@ eda_plot_correlation_matrix <- function(dfInput, outlineVar = NA, plotTitle = "C
     p <- plot_correlations_gg(dfInput, outlineVar = outlineVar, plotTitle = plotTitle) +
         theme_quant(font_family = .session_font_family()) +
         theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+    return(p)
+}
+
+
+#' Association matrix of features of any type
+#'
+#' MULTIVARIATE (all types): clustered heat map of [association_matrix()],
+#' which extends [eda_plot_correlation_matrix()] to categorical features:
+#' correlation between numerical features, Cramer's V between categorical
+#' ones and the correlation ratio between the two kinds. Features are ordered
+#' by hierarchical clustering on `1 - |association|`, so redundant features
+#' end up next to each other whatever their type. Correlations range from -1
+#' (red) to 1 (blue); the other measures from 0 to 1. Undefined associations
+#' and the diagonal are grey. The plot is styled with [theme_quant()] in the
+#' font of the current session theme.
+#'
+#' @inheritParams association_matrix
+#' @param outlineVar Optional name of a feature whose row and column are
+#'   outlined, e.g. the target.
+#' @param showValues If `TRUE`, print each association on its tile. `NULL`
+#'   prints them when there are at most 25 features.
+#' @param plotTitle Plot title.
+#'
+#' @return A ggplot object. Its data has one row per pair of features, with
+#'   the association `AssocVal` and the `measure` used.
+#' @family EDA plots
+#' @export
+#'
+#' @examples
+#' eda_plot_association_matrix(ggplot2::mpg, outlineVar = "hwy")
+#' eda_plot_association_matrix(ggplot2::diamonds[1:5000, ], outlineVar = "price")
+eda_plot_association_matrix <- function(dfInput, method = c("pearson", "spearman"),
+                                        ordinalAsNumeric = FALSE, biasCorrect = TRUE,
+                                        outlineVar = NA, showValues = NULL,
+                                        plotTitle = "Association of features") {
+    method <- match.arg(method)
+
+    mAssoc <- association_matrix(dfInput, method = method, ordinalAsNumeric = ordinalAsNumeric,
+                                 biasCorrect = biasCorrect)
+    mMeasure <- attr(mAssoc, "measure")
+
+    mDist <- 1 - abs(mAssoc)
+    mDist[is.na(mDist)] <- 1
+    vFeatures <- rownames(mAssoc)[stats::hclust(as.dist(mDist))$order]
+    nFeatures <- length(vFeatures)
+
+    if(is.null(showValues)) showValues <- nFeatures <= 25
+
+    dfAssoc <- expand.grid(Var1 = vFeatures, Var2 = vFeatures, stringsAsFactors = FALSE) %>%
+        mutate(AssocVal = ifelse(Var1 == Var2, NA, mAssoc[cbind(Var1, Var2)]),
+               measure = mMeasure[cbind(Var1, Var2)],
+               Var1 = factor(Var1, levels = vFeatures),
+               Var2 = factor(Var2, levels = rev(vFeatures)))
+
+    vMeasures <- unique(dfAssoc$measure[!is.na(dfAssoc$AssocVal)])
+    vSubtitle <- c(pearson = "Numerical: Pearson r",
+                   spearman = "Numerical: Spearman rho",
+                   cramers_v = "Categorical: Cram\u00e9r's V",
+                   eta = "Mixed: correlation ratio")
+    plotSubtitle <- paste(vSubtitle[intersect(names(vSubtitle), vMeasures)], collapse = "; ")
+    if(biasCorrect && any(c("cramers_v", "eta") %in% vMeasures)) {
+        plotSubtitle <- paste0(plotSubtitle, "\n(V and correlation ratio bias-corrected)")
+    }
+
+    p <- ggplot(dfAssoc, aes(x = Var1, y = Var2, fill = AssocVal)) +
+        geom_tile(color = "white") +
+        scale_fill_gradient2(name = NULL, low = "#D11141", mid = "#F8F5F5", high = "#00AEDB",
+                             midpoint = 0, limits = c(-1, 1), na.value = "grey90") +
+        coord_fixed() +
+        labs(title = plotTitle, subtitle = plotSubtitle, x = "", y = "") +
+        theme_quant(font_family = .session_font_family()) +
+        theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+              panel.border = element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank())
+
+    if(showValues) {
+        p <- p + geom_text(aes(label = ifelse(is.na(AssocVal), "", sprintf("%.2f", AssocVal))),
+                           color = "black", size = 2.5)
+    }
+
+    if(!is.na(outlineVar) && outlineVar %in% vFeatures) {
+        xOutline <- match(outlineVar, vFeatures)
+        yOutline <- match(outlineVar, rev(vFeatures))
+        p <- p +
+            annotate("rect", xmin = xOutline - 0.5, xmax = xOutline + 0.5, ymin = 0.5, ymax = nFeatures + 0.5,
+                     fill = NA, color = "black", linewidth = 0.75) +
+            annotate("rect", xmin = 0.5, xmax = nFeatures + 0.5, ymin = yOutline - 0.5, ymax = yOutline + 0.5,
+                     fill = NA, color = "black", linewidth = 0.75)
+    }
 
     return(p)
 }

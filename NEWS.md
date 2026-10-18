@@ -18,6 +18,32 @@ New EDA plots:
 * `eda_plot_actual_vs_predicted()`: actual against predicted values with a
   45-degree line, RMSE and R-squared in the subtitle, one panel per model,
   and the worst predictions labelled.
+* `eda_plot_association_matrix()` and `association_matrix()`: association
+  between features of every type, which `eda_plot_correlation_matrix()`
+  limits to numerical ones. Numerical pairs use Pearson or Spearman
+  correlation, categorical pairs Cramer's V and mixed pairs the correlation
+  ratio, by default bias-corrected so that many-level features do not look
+  associated with everything. Features are clustered so redundant ones sit
+  together, and ordered factors can be treated as numerical with
+  `ordinalAsNumeric = TRUE`.
+
+New helper:
+
+* `flag_outliers()` flags values more than `nIQR` (default 2.5) interquartile
+  ranges from the median, a rule that the outliers themselves hardly move.
+
+Changes:
+
+* `eda_plot_heatmap()` greys out cells with fewer than `minCount` rows
+  (default 10), leaves them out of the color scale and counts them in the
+  caption, so a median of a handful of rows no longer looks as reliable as
+  the rest. Each tile shows its row count unless `showCounts = FALSE`. Use
+  `minCount = 1` for the previous coloring.
+* `eda_plot_scatter()` can highlight and label the points that most
+  influence a linear fit: `nLabel` points per panel, picked by leverage or by
+  Cook's distance (`labelBy`) above the usual `4 / n` cutoff, labelled with
+  `feature_id` or the row number. In Ames, `Gr_Liv_Area` against
+  `Sale_Price` picks out the three very large partial sales.
 
 # nglib 1.1.0
 

@@ -96,3 +96,36 @@ test_that("eda_plot_heatmap summarises medians per cell", {
     cell <- p$data$z[p$data$x == "f" & p$data$y == "1999"]
     expect_equal(cell, median(mpg$hwy[mpg$drv == "f" & mpg$year == 1999]))
 })
+
+test_that("eda_plot_heatmap counts rows and greys out sparse cells", {
+    p <- eda_plot_heatmap(mpg, "class", "drv", "hwy", minCount = 10)
+    counts <- table(paste(mpg$class, mpg$drv))
+    expect_equal(as.vector(counts[paste(p$data$x, p$data$y)]), p$data$n)
+    expect_equal(p$data$sparse, p$data$n < 10)
+    expect_equal(p$data$z_fill, ifelse(p$data$n < 10, NA, p$data$z))
+    expect_equal(p$labels$caption,
+                 paste(sum(p$data$n < 10), "of", nrow(p$data), "cells have fewer than 10 rows (grey)"))
+
+    b <- ggplot2::ggplot_build(p)$data
+    expect_true(all(b[[1]]$fill[p$data$sparse] == "grey85"))
+    expect_false(any(b[[1]]$fill[!p$data$sparse] == "grey85"))
+    expect_equal(as.integer(b[[2]]$label), p$data$n)
+    expect_true(all(b[[2]]$colour[p$data$sparse] == "grey40"))
+})
+
+test_that("sparse cells are left out of the color scale", {
+    df <- data.frame(a = c(rep("x", 20), "y"), b = "k", v = c(1:20, 1000))
+    p <- eda_plot_heatmap(df, "a", "b", "v")
+    sc <- ggplot2::ggplot_build(p)$plot$scales$get_scales("fill")
+    expect_equal(sc$get_limits(), c(10.5, 10.5))
+})
+
+test_that("eda_plot_heatmap options turn off greying and counts", {
+    p <- eda_plot_heatmap(mpg, "class", "drv", "hwy", minCount = 1, showCounts = FALSE)
+    expect_false(any(p$data$sparse))
+    expect_null(p$labels$caption)
+    expect_length(p$layers, 1)
+    expect_buildable(p)
+
+    expect_buildable(eda_plot_heatmap(mpg, "class", "drv", "hwy", minCount = 1000))
+})

@@ -4,7 +4,14 @@
 \alias{eda_plot_heatmap}
 \title{Heat map of a numerical median across two categorical features}
 \usage{
-eda_plot_heatmap(dfInput, feature_cat1, feature_cat2, feature_num)
+eda_plot_heatmap(
+  dfInput,
+  feature_cat1,
+  feature_cat2,
+  feature_num,
+  minCount = 10,
+  showCounts = TRUE
+)
 }
 \arguments{
 \item{dfInput}{A data frame.}
@@ -14,21 +21,35 @@ eda_plot_heatmap(dfInput, feature_cat1, feature_cat2, feature_num)
 \item{feature_cat2}{Name of the categorical column for the y axis.}
 
 \item{feature_num}{Name of the numerical column to summarise.}
+
+\item{minCount}{Cells with fewer rows than this are greyed out. Use \code{1} to
+color every cell.}
+
+\item{showCounts}{If \code{TRUE}, label each tile with its number of rows.}
 }
 \value{
-A ggplot object.
+A ggplot object. Its data has one row per cell with the median \code{z}
+and the row count \code{n}.
 }
 \description{
 MULTIVARIATE (categorical-categorical-numerical): tiles of the median of
 \code{feature_num} for each combination of \code{feature_cat1} and \code{feature_cat2}.
 Both axes are ordered by median unless they are ordered factors.
 }
+\details{
+A median of a few rows can look as meaningful as one of hundreds, so cells
+with fewer than \code{minCount} rows are drawn in grey and left out of the color
+scale, and the caption says how many there are. Each tile can also show its
+row count. Combinations with no rows are left blank.
+}
 \examples{
 eda_plot_heatmap(ggplot2::diamonds, "cut", "color", "price")
+eda_plot_heatmap(ggplot2::mpg, "class", "manufacturer", "hwy", minCount = 5)
 }
 \seealso{
 Other EDA plots:
 \code{\link[=eda_plot_actual_vs_predicted]{eda_plot_actual_vs_predicted()}},
+\code{\link[=eda_plot_association_matrix]{eda_plot_association_matrix()}},
 \code{\link[=eda_plot_bar]{eda_plot_bar()}},
 \code{\link[=eda_plot_box]{eda_plot_box()}},
 \code{\link[=eda_plot_box_by_bins]{eda_plot_box_by_bins()}},

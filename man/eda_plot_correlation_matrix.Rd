@@ -25,7 +25,8 @@ A ggplot object.
 MULTIVARIATE (numerical): clustered correlation heat map of the numerical
 columns of \code{dfInput}, styled with \code{\link[=theme_quant]{theme_quant()}} in the font of the
 current session theme. Non-numerical columns are ignored. See
-\code{\link[=plot_correlations_gg]{plot_correlations_gg()}}.
+\code{\link[=plot_correlations_gg]{plot_correlations_gg()}}, and \code{\link[=eda_plot_association_matrix]{eda_plot_association_matrix()}} to include
+categorical features.
 }
 \examples{
 eda_plot_correlation_matrix(mtcars, outlineVar = "mpg")
@@ -33,6 +34,7 @@ eda_plot_correlation_matrix(mtcars, outlineVar = "mpg")
 \seealso{
 Other EDA plots:
 \code{\link[=eda_plot_actual_vs_predicted]{eda_plot_actual_vs_predicted()}},
+\code{\link[=eda_plot_association_matrix]{eda_plot_association_matrix()}},
 \code{\link[=eda_plot_bar]{eda_plot_bar()}},
 \code{\link[=eda_plot_box]{eda_plot_box()}},
 \code{\link[=eda_plot_box_by_bins]{eda_plot_box_by_bins()}},

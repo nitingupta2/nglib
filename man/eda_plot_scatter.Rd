@@ -15,7 +15,10 @@ eda_plot_scatter(
   xLabelsScale = waiver(),
   yLog = FALSE,
   yLimits = NULL,
-  yLabelsScale = waiver()
+  yLabelsScale = waiver(),
+  nLabel = 0,
+  feature_id = NULL,
+  labelBy = c("leverage", "cooks")
 )
 }
 \arguments{
@@ -40,6 +43,18 @@ eda_plot_scatter(
 \item{yLimits}{Limits of the y axis, or \code{NULL}.}
 
 \item{yLabelsScale}{Labels for the y axis.}
+
+\item{nLabel}{Maximum number of influential points to label in each panel;
+\code{0} labels none.}
+
+\item{feature_id}{Optional name of a column used to label points. If
+\code{NULL}, points are labelled with their row number.}
+
+\item{labelBy}{How influential points are picked: \code{"leverage"}, the hat
+value of a point in the linear fit of \code{feature_y} on the feature, which
+is high when its x is far from the rest; or \code{"cooks"}, Cook's distance,
+which is high only when such a point also has a large residual, i.e. it
+pulls the fit.}
 }
 \value{
 A ggplot object.
@@ -47,19 +62,33 @@ A ggplot object.
 \description{
 BIVARIATE (numerical-numerical): scatter plots of \code{feature_y} against each
 of \code{vFeaturesNum}, faceted when there is more than one, with an optional
-linear fit.
+linear fit. Optionally, the points that most influence a linear fit, such
+as a few very large houses sold at a low price, are highlighted and
+labelled.
 }
 \details{
 \code{xLog} only applies when a single feature is plotted.
+
+Influence is computed from \code{lm(y ~ x)} in each panel, on log10 scales
+where the axes are logged. Only points beyond the usual cutoff of \code{4 / n}
+(twice the mean leverage for a simple regression, or the usual Cook's
+distance cutoff) are labelled, at most \code{nLabel} per panel, the most
+influential first.
 }
 \examples{
 eda_plot_scatter(mtcars, c("wt", "disp", "hp"), feature_y = "mpg")
 eda_plot_scatter(ggplot2::diamonds, "carat", "price", alpha = 0.05,
                  xLog = TRUE, yLog = TRUE)
+
+df <- tibble::rownames_to_column(mtcars, "car")
+eda_plot_scatter(df, "hp", "mpg", nLabel = 3, feature_id = "car")
+eda_plot_scatter(df, c("hp", "wt"), "mpg", nLabel = 2, feature_id = "car",
+                 labelBy = "cooks")
 }
 \seealso{
 Other EDA plots:
 \code{\link[=eda_plot_actual_vs_predicted]{eda_plot_actual_vs_predicted()}},
+\code{\link[=eda_plot_association_matrix]{eda_plot_association_matrix()}},
 \code{\link[=eda_plot_bar]{eda_plot_bar()}},
 \code{\link[=eda_plot_box]{eda_plot_box()}},
 \code{\link[=eda_plot_box_by_bins]{eda_plot_box_by_bins()}},

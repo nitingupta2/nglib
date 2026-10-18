@@ -20,8 +20,8 @@
 #'   [eda_plot_density()], [eda_plot_stacked_bar()], [eda_plot_transforms()].
 #' * Multivariate: [eda_plot_scatter_cat()], [eda_plot_scatter_cat_facets()],
 #'   [eda_plot_heatmap()], [eda_plot_correlation_matrix()],
-#'   [plot_correlations_gg()], [eda_plot_target_correlations()],
-#'   [eda_plot_box_by_bins()].
+#'   [plot_correlations_gg()], [eda_plot_association_matrix()],
+#'   [eda_plot_target_correlations()], [eda_plot_box_by_bins()].
 #' * Model fit: [eda_plot_actual_vs_predicted()].
 #'
 #' @section Data helpers:
@@ -29,7 +29,7 @@
 #' [change_na_to_most_common_value()], [median_by_grouping()],
 #' [most_common_value_by_grouping()], [significant_digits()],
 #' [pct_diff_lagging()], [pct_diff_leading()], [nearest_multiple()],
-#' [correlation_reorder_matrix()].
+#' [correlation_reorder_matrix()], [association_matrix()], [flag_outliers()].
 #'
 #' @keywords internal
 #' @import ggplot2
@@ -51,9 +51,10 @@
 "_PACKAGE"
 
 globalVariables(c(
-    "CorVal", "Var1", "Var2", "abs_error", "actual", "bin", "correlation",
-    "dominant_level", "dominated", "feature", "feature_class", "id", "label",
+    "AssocVal", "CorVal", "Var1", "Var2", "abs_error", "actual", "bin",
+    "correlation", "dominant_level", "dominated", "feature", "feature_class",
+    "id", "influence", "label",
     "median_x", "median_y", "median_z", "model", "n", "n_levels", "n_rare",
-    "na_count", "predicted", "prop", "r_squared", "share", "v", "value", "x",
-    "y", "z", "z_max", "z_min"
+    "na_count", "predicted", "prop", "r_squared", "share", "sparse", "v",
+    "value", "x", "y", "z", "z_fill", "z_max", "z_min"
 ))

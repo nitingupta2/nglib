@@ -156,3 +156,34 @@ nearest_multiple <- function(rawNumber, m) {
     nearestNumber <- ifelse((remainder + 1e-10) > (m/2), rawNumber + m - remainder, rawNumber - remainder)
     return(as.integer(nearestNumber))
 }
+
+#' Flag outliers by their distance from the median
+#'
+#' Flags values more than `nIQR` interquartile ranges from the median, i.e.
+#' outside `median(x) +/- nIQR * IQR(x)`. Unlike a rule based on the mean and
+#' standard deviation, the median and IQR are hardly moved by the outliers
+#' themselves.
+#'
+#' If more than half of `x` shares one value, the IQR is 0 and every other
+#' value is flagged; such a feature is better treated as categorical.
+#'
+#' @param x A numeric vector.
+#' @param nIQR Number of interquartile ranges from the median beyond which a
+#'   value is an outlier.
+#'
+#' @return A logical vector the length of `x`, `NA` where `x` is `NA`.
+#' @export
+#'
+#' @examples
+#' flag_outliers(c(1:10, 50))
+#' rownames(mtcars)[flag_outliers(mtcars$hp)]
+#'
+#' # rows of a data frame with an outlying price
+#' ggplot2::diamonds %>%
+#'     dplyr::filter(flag_outliers(price, nIQR = 4)) %>%
+#'     nrow()
+flag_outliers <- function(x, nIQR = 2.5) {
+    center <- median(x, na.rm = TRUE)
+    spread <- stats::IQR(x, na.rm = TRUE)
+    return(abs(x - center) > nIQR * spread)
+}

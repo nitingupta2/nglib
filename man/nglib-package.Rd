@@ -32,8 +32,8 @@ data analysis (EDA) plots, and a few small data-wrangling helpers.
 \code{\link[=eda_plot_density]{eda_plot_density()}}, \code{\link[=eda_plot_stacked_bar]{eda_plot_stacked_bar()}}, \code{\link[=eda_plot_transforms]{eda_plot_transforms()}}.
 \item Multivariate: \code{\link[=eda_plot_scatter_cat]{eda_plot_scatter_cat()}}, \code{\link[=eda_plot_scatter_cat_facets]{eda_plot_scatter_cat_facets()}},
 \code{\link[=eda_plot_heatmap]{eda_plot_heatmap()}}, \code{\link[=eda_plot_correlation_matrix]{eda_plot_correlation_matrix()}},
-\code{\link[=plot_correlations_gg]{plot_correlations_gg()}}, \code{\link[=eda_plot_target_correlations]{eda_plot_target_correlations()}},
-\code{\link[=eda_plot_box_by_bins]{eda_plot_box_by_bins()}}.
+\code{\link[=plot_correlations_gg]{plot_correlations_gg()}}, \code{\link[=eda_plot_association_matrix]{eda_plot_association_matrix()}},
+\code{\link[=eda_plot_target_correlations]{eda_plot_target_correlations()}}, \code{\link[=eda_plot_box_by_bins]{eda_plot_box_by_bins()}}.
 \item Model fit: \code{\link[=eda_plot_actual_vs_predicted]{eda_plot_actual_vs_predicted()}}.
 }
 }
@@ -44,7 +44,7 @@ data analysis (EDA) plots, and a few small data-wrangling helpers.
 \code{\link[=change_na_to_most_common_value]{change_na_to_most_common_value()}}, \code{\link[=median_by_grouping]{median_by_grouping()}},
 \code{\link[=most_common_value_by_grouping]{most_common_value_by_grouping()}}, \code{\link[=significant_digits]{significant_digits()}},
 \code{\link[=pct_diff_lagging]{pct_diff_lagging()}}, \code{\link[=pct_diff_leading]{pct_diff_leading()}}, \code{\link[=nearest_multiple]{nearest_multiple()}},
-\code{\link[=correlation_reorder_matrix]{correlation_reorder_matrix()}}.
+\code{\link[=correlation_reorder_matrix]{correlation_reorder_matrix()}}, \code{\link[=association_matrix]{association_matrix()}}, \code{\link[=flag_outliers]{flag_outliers()}}.
 }
 
 \author{
