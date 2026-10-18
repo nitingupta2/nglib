@@ -104,6 +104,8 @@ other, whatever their type:
 eda_plot_association_matrix(ggplot2::mpg, outlineVar = "hwy")
 ```
 
+![](man/figures/eda-association.png)
+
 ```r
 eda_plot_missing_counts(airquality)
 ```
@@ -117,6 +119,8 @@ correlation with the target:
 eda_plot_target_correlations(mtcars, "mpg")
 ```
 
+![](man/figures/eda-target-correlations.png)
+
 A category can look backwards when a numerical feature drives both it and
 the target. Better clarity diamonds have a lower median price only because
 they tend to be smaller; within bins of carat, price rises with clarity:
@@ -125,17 +129,23 @@ they tend to be smaller; within bins of carat, price rises with clarity:
 eda_plot_box_by_bins(ggplot2::diamonds, "clarity", "price", "carat", yLog = TRUE)
 ```
 
+![](man/figures/eda-box-by-bins.png)
+
 To pick a transform, compare how linear each one is with the target:
 
 ```r
 eda_plot_transforms(ggplot2::diamonds, "carat", "price")
 ```
 
+![](man/figures/eda-transforms.png)
+
 To find near-constant categorical features and rare levels:
 
 ```r
 eda_plot_category_dominance(ggplot2::mpg, threshold = 0.6)
 ```
+
+![](man/figures/eda-category-dominance.png)
 
 To label the points that pull a linear fit the most, such as a few very
 large houses sold cheaply, use `nLabel`; `flag_outliers()` flags values far
@@ -147,13 +157,17 @@ eda_plot_scatter(cars, "hp", "mpg", nLabel = 3, feature_id = "car")
 cars[flag_outliers(cars$hp), "car"]
 ```
 
+![](man/figures/eda-scatter-labels.png)
+
 To check a model's predictions, with the worst ones labelled:
 
 ```r
 fit <- lm(mpg ~ wt + hp, data = mtcars)
 df <- data.frame(car = rownames(mtcars), mpg = mtcars$mpg, pred = fitted(fit))
-eda_plot_actual_vs_predicted(df, "mpg", "pred", feature_id = "car")
+eda_plot_actual_vs_predicted(df, "mpg", "pred", feature_id = "car", nLabel = 3)
 ```
+
+![](man/figures/eda-actual-vs-predicted.png)
 
 ### Themes and scales
 
