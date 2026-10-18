@@ -22,7 +22,7 @@
 #'   [eda_plot_heatmap()], [eda_plot_correlation_matrix()],
 #'   [plot_correlations_gg()], [eda_plot_association_matrix()],
 #'   [eda_plot_target_correlations()], [eda_plot_box_by_bins()].
-#' * Model fit: [eda_plot_actual_vs_predicted()].
+#' * Model fit: [eda_plot_actual_vs_predicted()], [eda_plot_residuals()].
 #'
 #' @section Data helpers:
 #' [find_mode()], [find_most_common_value()], [`%notin%`], [change_na_to()],
@@ -53,7 +53,8 @@
 globalVariables(c(
     "AssocVal", "CorVal", "Var1", "Var2", "abs_error", "actual", "bin",
     "correlation", "dominant_level", "dominated", "feature", "feature_class",
-    "id", "influence", "label",
+    "id", "influence", "intercept", "label", "level", "panel", "rank", "side",
+    "slope",
     "median_x", "median_y", "median_z", "model", "n", "n_levels", "n_rare",
     "na_count", "predicted", "prop", "r_squared", "share", "sparse", "v",
     "value", "x", "y", "z", "z_fill", "z_max", "z_min"

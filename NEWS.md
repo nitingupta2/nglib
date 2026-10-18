@@ -1,3 +1,20 @@
+# nglib 1.3.0
+
+New EDA plot:
+
+* `eda_plot_residuals()`: the four residual plots of a linear model that
+  `plot(lm)` draws (residuals vs fitted, normal Q-Q, scale-location, and
+  residuals vs leverage with Cook's distance contours) as one ggplot in the
+  package theme, labelling the most extreme points as `plot.lm()` does.
+
+Changes:
+
+* `eda_plot_actual_vs_predicted()` draws its 45-degree line in red, as wide
+  as the fitted lines of the other scatter plots.
+* Labels of individual points in `eda_plot_scatter()`,
+  `eda_plot_actual_vs_predicted()` and `eda_plot_residuals()` are placed
+  with 'ggrepel' so they don't overlap. 'ggrepel' is a new import.
+
 # nglib 1.2.0
 
 New EDA plots:

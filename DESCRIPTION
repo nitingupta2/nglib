@@ -1,7 +1,7 @@
 Package: nglib
 Type: Package
 Title: Plotting Themes, Color Scales and Exploratory Data Analysis Plots
-Version: 1.2.0
+Version: 1.3.0
 Authors@R:
     person("Nitin", "Gupta", , "7339049+nitingupta2@users.noreply.github.com", role = c("aut", "cre", "cph"))
 Description: Provides the 'ggplot2' themes theme_quant() and theme_poster(), custom
@@ -25,6 +25,7 @@ Depends:
     rlang,
     ggridges
 Imports:
+    ggrepel (>= 0.9.0),
     grDevices,
     graphics,
     stats,

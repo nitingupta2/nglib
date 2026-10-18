@@ -35,6 +35,7 @@ Other EDA plots:
 \code{\link[=eda_plot_histograms]{eda_plot_histograms()}},
 \code{\link[=eda_plot_missing_values]{eda_plot_missing_values()}},
 \code{\link[=eda_plot_normal_qq]{eda_plot_normal_qq()}},
+\code{\link[=eda_plot_residuals]{eda_plot_residuals()}},
 \code{\link[=eda_plot_scatter]{eda_plot_scatter()}},
 \code{\link[=eda_plot_scatter_cat]{eda_plot_scatter_cat()}},
 \code{\link[=eda_plot_scatter_cat_facets]{eda_plot_scatter_cat_facets()}},

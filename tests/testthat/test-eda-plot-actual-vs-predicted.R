@@ -5,7 +5,7 @@ dfBoth <- rbind(data.frame(dfPred, model = "wt + hp"),
                 data.frame(dfPred[1:2], pred = unname(fitted(fit2)), model = "wt"))
 
 label_layer <- function(p) {
-    Filter(function(l) inherits(l$geom, "GeomLabel"), p$layers)
+    Filter(function(l) inherits(l$geom, "GeomLabelRepel"), p$layers)
 }
 
 metrics_of <- function(f) {
@@ -61,6 +61,8 @@ test_that("the 45-degree line spans actual and predicted values", {
     line <- p$layers[[1]]$data
     expect_equal(range(line$v), range(c(dfPred$mpg, dfPred$pred)))
     expect_equal(p$layers[[1]]$aes_params$linetype, "dashed")
+    expect_equal(p$layers[[1]]$aes_params$colour, "#D11141")
+    expect_equal(p$layers[[1]]$aes_params$linewidth, 1)
 })
 
 test_that("labelsScale formats axes and RMSE, and log scales apply", {

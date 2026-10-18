@@ -1,7 +1,7 @@
 dfCars <- tibble::rownames_to_column(mtcars, "car")
 
 label_data <- function(p) {
-    lLabels <- Filter(function(l) inherits(l$geom, "GeomLabel"), p$layers)
+    lLabels <- Filter(function(l) inherits(l$geom, "GeomLabelRepel"), p$layers)
     if(length(lLabels) == 0) return(NULL)
     lLabels[[1]]$data
 }

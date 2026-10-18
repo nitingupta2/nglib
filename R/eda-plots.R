@@ -299,7 +299,8 @@ eda_plot_scatter <- function(dfInput, vFeaturesNum, feature_y, alpha = 0.3, add_
         if(nrow(dfLabel) > 0) {
             p <- p +
                 geom_point(data = dfLabel, color = "#D11141") +
-                geom_label(data = dfLabel, aes(label = id), size = 2.8, hjust = "inward", vjust = "inward")
+                ggrepel::geom_label_repel(data = dfLabel, aes(label = id), size = 2.8,
+                                          max.overlaps = Inf, seed = 1)
         }
     }
     return(p)
@@ -1127,7 +1128,7 @@ eda_plot_actual_vs_predicted <- function(dfInput, feature_actual, feature_predic
     }
 
     p <- ggplot(df, aes(x = predicted, y = actual)) +
-        geom_line(data = dfLine, aes(x = v, y = v), linetype = "dashed", color = "darkgrey") +
+        geom_line(data = dfLine, aes(x = v, y = v), linetype = "dashed", color = "#D11141", linewidth = 1) +
         geom_point(color = "#00AEDB", alpha = 0.5) +
         expand_limits(x = vRange, y = vRange) +
         labs(title = glue::glue("Actual v/s predicted {feature_actual}"),
@@ -1136,7 +1137,8 @@ eda_plot_actual_vs_predicted <- function(dfInput, feature_actual, feature_predic
     if(nrow(dfLabel) > 0) {
         p <- p +
             geom_point(data = dfLabel, color = "#D11141") +
-            geom_label(data = dfLabel, aes(label = id), size = 2.8, hjust = "inward", vjust = "inward")
+            ggrepel::geom_label_repel(data = dfLabel, aes(label = id), size = 2.8,
+                                      max.overlaps = Inf, seed = 1)
     }
 
     if(!is.null(feature_model)) {
@@ -1156,4 +1158,183 @@ eda_plot_actual_vs_predicted <- function(dfInput, feature_actual, feature_predic
     }
 
     return(p)
+}
+
+
+#' Residual plots of a linear model
+#'
+#' MODEL FIT: the four diagnostic plots of [stats::plot.lm()] as one ggplot,
+#' in the theme of the other plots instead of base graphics:
+#'
+#' 1. Residuals vs Fitted: a trend in the smooth suggests a missing
+#'    non-linear term.
+#' 2. Normal Q-Q: standardized residuals against normal quantiles, with a line
+#'    through the quartiles; departures in the tails mean heavy tails or skew.
+#' 3. Scale-Location: the square root of the absolute standardized residuals
+#'    against fitted values; a rising smooth means the variance grows with
+#'    the fit.
+#' 4. Residuals vs Leverage: standardized residuals against leverage, with
+#'    dashed contours where Cook's distance is 0.5 and 1; points beyond them
+#'    pull the fit.
+#'
+#' As in [stats::plot.lm()], the smooths in the first and third panels are
+#' [stats::lowess()] curves, the fitted values are on the scale of the linear
+#' predictor, and the `nLabel`
+#' most extreme points of each panel are labelled: by absolute residual in
+#' the first three panels and by Cook's distance in the last.
+#'
+#' @param lmModel A model fitted with [stats::lm()], or a [stats::glm()] (its
+#'   residuals are deviance residuals).
+#' @param which Which of the four panels to draw, a subset of `1:4`.
+#' @param nLabel Number of points to label in each panel; `0` labels none.
+#' @param vLabels Optional labels for the observations, one per residual,
+#'   e.g. an ID column. If `NULL`, the row names of the model data are used.
+#' @param alpha Point transparency.
+#' @param plotTitle Plot title. If `NULL`, "Residual plots" is used, with the
+#'   model formula as subtitle.
+#'
+#' @return A ggplot object with one panel per plot. Its data has one row per
+#'   observation and panel, with the panel's `x` and `y` values.
+#' @family EDA plots
+#' @export
+#'
+#' @examples
+#' fit <- lm(mpg ~ wt + hp, data = mtcars)
+#' eda_plot_residuals(fit)
+#' eda_plot_residuals(fit, which = c(1, 4), nLabel = 2)
+#'
+#' fitDiamonds <- lm(log(price) ~ log(carat) + cut + color + clarity,
+#'                   data = ggplot2::diamonds)
+#' eda_plot_residuals(fitDiamonds, alpha = 0.05, nLabel = 0)
+eda_plot_residuals <- function(lmModel, which = 1:4, nLabel = 3, vLabels = NULL,
+                               alpha = 0.5, plotTitle = NULL) {
+
+    if(!inherits(lmModel, "lm")) {
+        stop("`lmModel` must be a model fitted with lm() or glm()", call. = FALSE)
+    }
+    which <- sort(unique(which))
+    if(length(which) == 0 || !all(which %in% 1:4)) {
+        stop("`which` must be a subset of 1:4", call. = FALSE)
+    }
+
+    vResid <- stats::residuals(lmModel)
+    vFitted <- stats::predict(lmModel)
+    vStdResid <- stats::rstandard(lmModel)
+    vLeverage <- stats::hatvalues(lmModel)
+    vCooks <- stats::cooks.distance(lmModel)
+    nObs <- length(vResid)
+
+    if(is.null(vLabels)) {
+        vLabels <- names(vResid) %||% as.character(seq_len(nObs))
+    } else if(length(vLabels) != nObs) {
+        stop(glue::glue("`vLabels` must have one label per residual ({nObs})"), call. = FALSE)
+    }
+
+    vPanels <- c("Residuals vs Fitted\ny: residuals, x: fitted values",
+                 "Normal Q-Q\ny: standardized residuals, x: theoretical quantiles",
+                 "Scale-Location\ny: sqrt(|standardized residuals|), x: fitted values",
+                 "Residuals vs Leverage\ny: standardized residuals, x: leverage")
+
+    # x, y and the ordering used to pick the points to label, per panel
+    lPanels <- list(
+        data.frame(x = vFitted, y = vResid, rank = abs(vResid)),
+        data.frame(x = stats::qnorm(stats::ppoints(nObs))[order(order(vStdResid))], y = vStdResid,
+                   rank = abs(vStdResid)),
+        data.frame(x = vFitted, y = sqrt(abs(vStdResid)), rank = abs(vStdResid)),
+        data.frame(x = vLeverage, y = vStdResid, rank = vCooks)
+    )
+
+    df <- dplyr::bind_rows(lapply(which, function(i) {
+        lPanels[[i]] %>%
+            mutate(panel = vPanels[i], id = vLabels)
+    })) %>%
+        dplyr::filter(is.finite(x), is.finite(y)) %>%
+        mutate(panel = factor(panel, levels = vPanels[which]))
+
+    dfLabel <- df %>%
+        group_by(panel) %>%
+        dplyr::slice_max(rank, n = nLabel, with_ties = FALSE) %>%
+        ungroup()
+
+    # lowess smooths, as panel.smooth() draws them
+    dfSmooth <- dplyr::bind_rows(lapply(split(df, df$panel, drop = TRUE), function(dfPanel) {
+        if(!as.character(dfPanel$panel[1]) %in% vPanels[c(1, 3)] || nrow(dfPanel) < 3) return(NULL)
+        data.frame(panel = dfPanel$panel[1], stats::lowess(dfPanel$x, dfPanel$y, f = 2/3, iter = 3))
+    }))
+
+    p <- ggplot(df, aes(x = x, y = y))
+
+    if(any(c(1, 4) %in% which)) {
+        dfZero <- data.frame(panel = factor(vPanels[intersect(c(1, 4), which)], levels = levels(df$panel)))
+        p <- p + geom_hline(data = dfZero, aes(yintercept = 0), linetype = "dotted", color = "grey50")
+    }
+
+    p <- p +
+        geom_point(color = "#00AEDB", alpha = alpha) +
+        facet_wrap(~panel, scales = "free", ncol = min(2, length(which))) +
+        scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+        labs(title = plotTitle %||% "Residual plots",
+             subtitle = if(is.null(plotTitle)) {.short_formula(lmModel)} else {NULL},
+             x = "", y = "")
+
+    if(nrow(dfSmooth) > 0) {
+        p <- p + geom_line(data = dfSmooth, color = "#D11141", linewidth = 1)
+    }
+
+    if(2 %in% which) {
+        vQuartiles <- stats::quantile(vStdResid[is.finite(vStdResid)], c(0.25, 0.75), names = FALSE)
+        slope <- diff(vQuartiles) / diff(stats::qnorm(c(0.25, 0.75)))
+        dfQQ <- data.frame(panel = factor(vPanels[2], levels = levels(df$panel)),
+                           slope = slope,
+                           intercept = vQuartiles[1] - slope * stats::qnorm(0.25))
+        p <- p + geom_abline(data = dfQQ, aes(slope = slope, intercept = intercept),
+                             linetype = "dashed", color = "#D11141", linewidth = 1)
+    }
+
+    if(4 %in% which) {
+        dfCook <- .cooks_contours(vLeverage, vStdResid, lmModel$rank, vPanels[4], levels(df$panel))
+        if(nrow(dfCook) > 0) {
+            dfCookLabel <- dfCook %>%
+                group_by(level, side) %>%
+                dplyr::slice_max(x, n = 1, with_ties = FALSE) %>%
+                ungroup()
+            p <- p +
+                geom_line(data = dfCook, aes(group = interaction(level, side)),
+                          linetype = "dashed", color = "grey50") +
+                geom_text(data = dfCookLabel, aes(label = level), color = "grey50", size = 2.5,
+                          hjust = 1, vjust = -0.4)
+        }
+    }
+
+    if(nrow(dfLabel) > 0) {
+        p <- p +
+            geom_point(data = dfLabel, color = "#D11141") +
+            ggrepel::geom_text_repel(data = dfLabel, aes(label = id), size = 2.8,
+                                     max.overlaps = Inf, seed = 1)
+    }
+
+    return(p)
+}
+
+# Lines where Cook's distance is 0.5 and 1 in the residuals vs leverage panel,
+# kept within the range of the standardized residuals so they don't stretch
+# the axis.
+.cooks_contours <- function(vLeverage, vStdResid, nCoef, panelLabel, panelLevels) {
+    vLeverage <- vLeverage[is.finite(vLeverage) & vLeverage > 0 & vLeverage < 1]
+    if(length(vLeverage) == 0 || is.null(nCoef)) return(data.frame())
+    yMax <- max(abs(vStdResid[is.finite(vStdResid)]))
+    vH <- seq(min(vLeverage), max(vLeverage), length.out = 101)
+
+    dfCook <- expand.grid(x = vH, level = c(0.5, 1), side = c(-1, 1)) %>%
+        mutate(y = side * sqrt(level * nCoef * (1 - x) / x),
+               panel = factor(panelLabel, levels = panelLevels)) %>%
+        dplyr::filter(abs(y) <= yMax)
+    return(dfCook)
+}
+
+# The model formula as one line, shortened if long.
+.short_formula <- function(lmModel) {
+    vFormula <- paste(trimws(deparse(stats::formula(lmModel))), collapse = " ")
+    if(nchar(vFormula) > 90) vFormula <- paste0(substr(vFormula, 1, 87), "...")
+    return(vFormula)
 }
